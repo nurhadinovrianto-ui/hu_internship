@@ -12,8 +12,9 @@ class Vacancy extends Model
 
     protected $fillable = [
         'industry_id', 'industry_supervisor_id', 'academic_period_id',
+        'study_program_id', 'created_by',
         'title', 'position', 'division', 'description', 'requirements',
-        'quota', 'duration_months', 'start_date', 'apply_deadline',
+        'quota', 'duration', 'start_date', 'apply_deadline',
         'work_type', 'location', 'is_published', 'is_closed',
     ];
 
@@ -23,7 +24,6 @@ class Vacancy extends Model
         'is_published' => 'boolean',
         'is_closed' => 'boolean',
         'quota' => 'integer',
-        'duration_months' => 'integer',
     ];
 
     public function industry(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -41,9 +41,33 @@ class Vacancy extends Model
         return $this->belongsTo(AcademicPeriod::class);
     }
 
+    public function studyProgram(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(StudyProgram::class);
+    }
+
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scopeForStudent($query, $student)
+    {
+        if (!$student) return $query;
+        return $query->where(function ($q) use ($student) {
+            $q->whereNull('study_program_id')
+              ->orWhere('study_program_id', $student->study_program_id);
+        });
+    }
+
     public function applications(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Application::class);
+    }
+
+    public function internships(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Internship::class);
     }
 
     public function getAcceptedCountAttribute(): int

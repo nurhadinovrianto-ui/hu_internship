@@ -14,19 +14,34 @@ class MeetingController extends Controller
     {
         $query = Meeting::where('host_user_id', auth()->id())->with('internships.student.user');
 
-        if ($request->status) {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('topic', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('internships.student.user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $meetings = $query->latest()->paginate(15);
+        $meetings = $query->latest()->paginate(15)->withQueryString();
         return view('dpl.meetings.index', compact('meetings'));
     }
 
     public function create()
     {
-        $internships = Internship::whereHas('dplAssignment', function($q) {
-            $q->where('lecturer_id', auth()->user()->lecturer->id);
-        })->whereIn('status', ['active'])->with('student.user')->get();
+        $lecturer = auth()->user()->lecturer;
+        if (!$lecturer) {
+            return redirect()->route('dpl.meetings.index')->with('error', 'Profil Dosen Anda belum terhubung.');
+        }
+
+        $internships = Internship::whereHas('dplAssignment', fn($q) => $q->where('lecturer_id', $lecturer->id))
+            ->whereIn('status', ['active'])
+            ->with('student.user')
+            ->get();
 
         return view('dpl.meetings.create', compact('internships'));
     }
@@ -57,21 +72,22 @@ class MeetingController extends Controller
 
     public function edit(Meeting $meeting)
     {
-        if (((int) $meeting->host_user_id) !== ((int) auth()->id())) {
+        if ($meeting->host_user_id != auth()->id()) {
             abort(403);
         }
 
-        $internships = Internship::whereHas('dplAssignment', function($q) {
-            $q->where('lecturer_id', auth()->user()->lecturer->id);
-        })->whereIn('status', ['active'])->with('student.user')->get();
-
+        $lecturer = auth()->user()->lecturer;
+        $internships = $lecturer ? Internship::whereHas('dplAssignment', fn($q) => $q->where('lecturer_id', $lecturer->id))
+            ->whereIn('status', ['active'])
+            ->with('student.user')
+            ->get() : collect();
 
         return view('dpl.meetings.edit', compact('meeting', 'internships'));
     }
 
     public function update(Request $request, Meeting $meeting)
     {
-        if (((int) $meeting->host_user_id) !== ((int) auth()->id())) {
+        if ($meeting->host_user_id != auth()->id()) {
             abort(403);
         }
 
@@ -92,10 +108,9 @@ class MeetingController extends Controller
 
     public function destroy(Meeting $meeting)
     {
-        if (((int) $meeting->host_user_id) !== ((int) auth()->id())) {
+        if ($meeting->host_user_id != auth()->id()) {
             abort(403);
         }
-        $meeting->internships()->detach();
         $meeting->delete();
         return redirect()->route('dpl.meetings.index')->with('success', 'Jadwal meeting dihapus.');
     }

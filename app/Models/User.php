@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Lab404\Impersonate\Models\Impersonate;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, Impersonate;
 
     protected $fillable = [
         'name', 'email', 'password', 'google_id', 'avatar', 'phone', 'status',
@@ -121,5 +122,15 @@ class User extends Authenticatable
         }
 
         return null;
+    }
+
+    public function canImpersonate(): bool
+    {
+        return $this->hasRole('super-admin');
+    }
+
+    public function canBeImpersonated(): bool
+    {
+        return !$this->hasRole('super-admin');
     }
 }

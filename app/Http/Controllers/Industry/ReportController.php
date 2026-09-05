@@ -22,17 +22,30 @@ class ReportController extends Controller
             return redirect()->route('dashboard.redirect')->with('error', 'Akses ditolak.');
         }
 
-        $query = FinalReport::with(['internship.student.user', 'internship.vacancy', 'revisions.reviewer'])
+        $query = FinalReport::with(['student.user', 'internship.vacancy', 'revisions.reviewer'])
             ->where('report_type', 'industry')
             ->whereHas('internship.vacancy', function ($q) use ($supervisor) {
                 $q->where('industry_supervisor_id', $supervisor->id);
             });
 
-        if ($request->status) {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('student.user', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('student', function ($sq) use ($search) {
+                      $sq->where('nim', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $reports = $query->latest()->paginate(15);
+        $reports = $query->latest()->paginate(15)->withQueryString();
 
         return view('industry.reports.index', compact('reports'));
     }
@@ -40,7 +53,7 @@ class ReportController extends Controller
     public function show(FinalReport $report)
     {
         $supervisor = $this->getSupervisor();
-        abort_unless(((int) $report->internship->vacancy->industry_supervisor_id) === $supervisor->id, 403);
+        abort_unless($supervisor && ($report->internship?->vacancy?->industry_supervisor_id == $supervisor->id || $report->internship?->vacancy?->industry_id == $supervisor->industry_id), 403);
 
         $report->load(['internship.student.user', 'revisions.reviewer']);
 
@@ -50,7 +63,7 @@ class ReportController extends Controller
     public function approve(Request $request, FinalReport $report)
     {
         $supervisor = $this->getSupervisor();
-        abort_unless(((int) $report->internship->vacancy->industry_supervisor_id) === $supervisor->id, 403);
+        abort_unless($supervisor && ($report->internship?->vacancy?->industry_supervisor_id == $supervisor->id || $report->internship?->vacancy?->industry_id == $supervisor->industry_id), 403);
 
         $request->validate([
             'status' => 'required|in:industry_approved,revision',

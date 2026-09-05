@@ -41,11 +41,14 @@ class ReportController extends Controller
             'report_type' => 'required|in:dpl,industry',
             'title' => 'required|string|max:255',
             'report_file' => "required|file|mimes:pdf|max:{$maxReportSize}",
+            'submitted_at' => 'nullable|date|before_or_equal:today',
         ]);
 
         $file = $request->file('report_file');
         $filePath = $file->store('final_reports', 'public');
         $fileSize = $file->getSize();
+
+        $submissionDate = $request->filled('submitted_at') ? \Carbon\Carbon::parse($request->submitted_at)->setTime(now()->hour, now()->minute, now()->second) : now();
 
         $finalReport = FinalReport::updateOrCreate(
             [
@@ -61,6 +64,7 @@ class ReportController extends Controller
                 'reviewed_at' => null,
                 'reviewed_by' => null,
                 'dpl_feedback' => null,
+                'created_at' => $submissionDate,
             ]
         );
 
@@ -71,6 +75,7 @@ class ReportController extends Controller
             'file_path' => $filePath,
             'file_size' => $fileSize,
             'status' => 'submitted',
+            'created_at' => $submissionDate,
         ]);
 
         if ($request->report_type === 'dpl') {

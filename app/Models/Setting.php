@@ -37,11 +37,24 @@ class Setting extends Model
      * @param mixed $value
      * @return \App\Models\Setting
      */
-    public static function setValue(string $key, $value)
+    public static function setValue(string $key, $value, ?string $label = null, ?string $description = null, ?string $group = null)
     {
-        return self::updateOrCreate(
-            ['key' => $key],
-            ['value' => $value]
-        );
+        $setting = self::where('key', $key)->first();
+        if ($setting) {
+            $updateData = ['value' => $value];
+            if ($label !== null) $updateData['label'] = $label;
+            if ($description !== null) $updateData['description'] = $description;
+            if ($group !== null) $updateData['group'] = $group;
+            $setting->update($updateData);
+            return $setting;
+        }
+
+        return self::create([
+            'key' => $key,
+            'value' => $value,
+            'label' => $label ?: ucwords(str_replace('_', ' ', $key)),
+            'description' => $description,
+            'group' => $group ?: 'general',
+        ]);
     }
 }

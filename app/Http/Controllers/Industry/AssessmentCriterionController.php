@@ -53,9 +53,7 @@ class AssessmentCriterionController extends Controller
     public function update(Request $request, AssessmentCriterion $criterion)
     {
         $supervisor = $this->getSupervisor();
-        if ($criterion->industry_id !== $supervisor?->industry_id) {
-            abort(403, 'Akses ditolak.');
-        }
+        abort_unless($supervisor && $supervisor->industry_id && $criterion->industry_id == $supervisor->industry_id, 403, 'Akses ditolak.');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -72,9 +70,7 @@ class AssessmentCriterionController extends Controller
     public function destroy(AssessmentCriterion $criterion)
     {
         $supervisor = $this->getSupervisor();
-        if ($criterion->industry_id !== $supervisor?->industry_id) {
-            abort(403, 'Akses ditolak.');
-        }
+        abort_unless($supervisor && $supervisor->industry_id && $criterion->industry_id == $supervisor->industry_id, 403, 'Akses ditolak.');
 
         $criterion->delete();
 
@@ -89,6 +85,10 @@ class AssessmentCriterionController extends Controller
         $supervisor = $this->getSupervisor();
         if (!$supervisor || !$supervisor->industry_id) {
             return back()->with('error', 'Profil industri Anda belum terhubung.');
+        }
+
+        if (AssessmentCriterion::where('industry_id', $supervisor->industry_id)->exists()) {
+            return back()->with('error', 'Perusahaan Anda sudah memiliki kriteria kustom.');
         }
 
         $defaults = AssessmentCriterion::where('assessor_type', 'industry')

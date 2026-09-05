@@ -20,7 +20,7 @@ class AgreementController extends Controller
         $supervisor = $this->getSupervisor();
 
         $query = Internship::with(['student.user', 'student.studyProgram', 'vacancy.industry', 'agreement', 'academicPeriod'])
-            ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id));
+            ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id)->orWhere('industry_id', $supervisor?->industry_id));
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -48,7 +48,11 @@ class AgreementController extends Controller
         $supervisor = $this->getSupervisor();
 
         // Pastikan magang milik supervisor industri ini
-        if (((int) $internship->vacancy->industry_supervisor_id) !== ((int) $supervisor?->id)) {
+        $isAllowed = $supervisor && (
+            $internship->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $internship->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        if (!$isAllowed) {
             return back()->with('error', 'Akses tidak sah untuk data magang ini.');
         }
 
@@ -87,7 +91,11 @@ class AgreementController extends Controller
     {
         $supervisor = $this->getSupervisor();
 
-        if (((int) $agreement->internship->vacancy->industry_supervisor_id) !== ((int) $supervisor?->id)) {
+        $isAllowed = $supervisor && (
+            $agreement->internship?->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $agreement->internship?->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        if (!$isAllowed) {
             return back()->with('error', 'Akses tidak sah.');
         }
 
@@ -104,9 +112,11 @@ class AgreementController extends Controller
     {
         $supervisor = $this->getSupervisor();
 
-        if (((int) $internship->vacancy->industry_supervisor_id) !== ((int) $supervisor?->id)) {
-            abort(403, 'Akses ditolak.');
-        }
+        $isAllowed = $supervisor && (
+            $internship->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $internship->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        abort_unless($isAllowed, 403, 'Akses ditolak.');
 
         $internship->load(['student.user', 'student.studyProgram.faculty', 'vacancy.industry', 'agreement']);
 

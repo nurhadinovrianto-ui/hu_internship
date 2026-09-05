@@ -16,14 +16,31 @@ class ReportController extends Controller
         return DplAssignment::where('lecturer_id', $lecturer?->id)->pluck('internship_id');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $internshipIds = $this->getInternshipIds();
-        $reports = FinalReport::with(['student.user', 'internship.vacancy.industry', 'revisions.reviewer'])
+        $query = FinalReport::with(['student.user', 'internship.vacancy.industry', 'revisions.reviewer'])
             ->whereIn('internship_id', $internshipIds)
-            ->where('report_type', 'dpl')
-            ->latest()
-            ->get();
+            ->where('report_type', 'dpl');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('student', function ($sq) use ($search) {
+                      $sq->where('nim', 'like', "%{$search}%")
+                         ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                  })->orWhereHas('internship.vacancy.industry', function ($iq) use ($search) {
+                      $iq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $reports = $query->latest()->paginate(15)->withQueryString();
 
         return view('dpl.reports', compact('reports'));
     }

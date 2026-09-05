@@ -57,7 +57,10 @@ class LogbookController extends Controller
     public function show(Logbook $logbook)
     {
         $supervisor = $this->getSupervisor();
-        abort_unless(((int) $logbook->internship->vacancy->industry_supervisor_id) === ((int) $supervisor->id), 403);
+        if (!$supervisor) {
+            abort(403, 'Akses ditolak.');
+        }
+        abort_unless($logbook->internship->vacancy->industry_supervisor_id == $supervisor->id || $logbook->internship->vacancy->industry_id == $supervisor->industry_id, 403);
 
         $logbook->load(['student.user', 'reviews.reviewer']);
 
@@ -67,7 +70,10 @@ class LogbookController extends Controller
     public function review(Request $request, Logbook $logbook)
     {
         $supervisor = $this->getSupervisor();
-        abort_unless(((int) $logbook->internship->vacancy->industry_supervisor_id) === ((int) $supervisor->id), 403);
+        if (!$supervisor) {
+            abort(403, 'Akses ditolak.');
+        }
+        abort_unless($logbook->internship->vacancy->industry_supervisor_id == $supervisor->id || $logbook->internship->vacancy->industry_id == $supervisor->industry_id, 403);
 
         $request->validate([
             'comment' => 'required|string|max:500',

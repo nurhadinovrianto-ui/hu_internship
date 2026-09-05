@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Logbook;
 use App\Models\LogbookReview;
 use App\Models\DplAssignment;
+use App\Models\Internship;
 use App\Notifications\InternshipStatusNotification;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,12 @@ class LogbookController extends Controller
     private function getInternshipIds()
     {
         $lecturer = auth()->user()->lecturer;
-        return DplAssignment::where('lecturer_id', $lecturer?->id)->pluck('internship_id');
+        if (!$lecturer) return collect();
+        return DplAssignment::where('lecturer_id', $lecturer->id)
+            ->whereNotNull('internship_id')
+            ->pluck('internship_id')
+            ->map(fn($id) => (int)$id)
+            ->unique();
     }
 
     public function index(Request $request)
@@ -44,14 +50,14 @@ class LogbookController extends Controller
             $query->whereHas('dplReview');
         }
 
-        $logbooks = $query->latest('date')->paginate(20)->withQueryString();
+        $logbooks = $query->latest('date')->paginate(15)->withQueryString();
         return view('dpl.logbooks.index', compact('logbooks'));
     }
 
     public function show(Logbook $logbook)
     {
         $internshipIds = $this->getInternshipIds();
-        abort_unless($internshipIds->contains($logbook->internship_id), 403);
+        abort_unless($internshipIds->contains((int) $logbook->internship_id), 403);
 
         $logbook->load(['student.user', 'internship.vacancy.industry', 'reviews.reviewer']);
         return view('dpl.logbooks.show', compact('logbook'));
@@ -59,6 +65,9 @@ class LogbookController extends Controller
 
     public function review(Request $request, Logbook $logbook)
     {
+        $internshipIds = $this->getInternshipIds();
+        abort_unless($internshipIds->contains((int) $logbook->internship_id), 403);
+
         $request->validate([
             'comment' => 'required|string|min:10',
             'status' => 'required|in:noted,revision,approved',

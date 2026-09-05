@@ -10,7 +10,7 @@ class DplAssignment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'internship_id', 'lecturer_id', 'assigned_by', 'assigned_at', 'notes',
+        'internship_id', 'student_id', 'academic_period_id', 'lecturer_id', 'assigned_by', 'assigned_at', 'notes',
     ];
 
     protected $casts = ['assigned_at' => 'datetime'];
@@ -18,6 +18,16 @@ class DplAssignment extends Model
     public function internship(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Internship::class);
+    }
+
+    public function student(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function academicPeriod(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 
     public function lecturer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -28,5 +38,10 @@ class DplAssignment extends Model
     public function assignedBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function getIsPrePlacementAttribute(): bool
+    {
+        return is_null($this->internship_id);
     }
 }

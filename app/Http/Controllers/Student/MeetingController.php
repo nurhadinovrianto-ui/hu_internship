@@ -12,12 +12,17 @@ class MeetingController extends Controller
     public function index(Request $request)
     {
         // Student can only see meetings for their active internship
-        $internship = Internship::where('student_id', auth()->user()->student->id)
+        $student = auth()->user()->student;
+        if (!$student) {
+            return redirect()->route('auth.pending');
+        }
+
+        $internship = Internship::where('student_id', $student->id)
             ->whereIn('status', ['active', 'completed'])
             ->first();
 
         if (!$internship) {
-            $meetings = collect();
+            $meetings = Meeting::whereRaw('1 = 0')->paginate(15);
             return view('student.meetings.index', compact('meetings'));
         }
 
@@ -25,11 +30,20 @@ class MeetingController extends Controller
             $q->where('internships.id', $internship->id);
         })->with('host');
 
-        if ($request->status) {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('topic', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('host', fn($hq) => $hq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $meetings = $query->latest()->paginate(15);
+        $meetings = $query->latest()->paginate(15)->withQueryString();
         return view('student.meetings.index', compact('meetings'));
     }
 }

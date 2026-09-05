@@ -8,9 +8,20 @@ use Illuminate\Http\Request;
 
 class FacultyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $faculties = Faculty::withCount('studyPrograms')->get();
+        $query = Faculty::withCount('studyPrograms');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('dean_name', 'like', "%{$search}%");
+            });
+        }
+
+        $faculties = $query->latest()->paginate(10)->withQueryString();
         return view('admin.faculties.index', compact('faculties'));
     }
 
@@ -27,6 +38,8 @@ class FacultyController extends Controller
         return redirect()->route('admin.faculties.index')->with('success', 'Fakultas berhasil ditambah.');
     }
 
+    public function show(Faculty $faculty) { return redirect()->route('admin.faculties.edit', $faculty); }
+
     public function edit(Faculty $faculty) { return view('admin.faculties.edit', compact('faculty')); }
 
     public function update(Request $request, Faculty $faculty)
@@ -42,6 +55,10 @@ class FacultyController extends Controller
 
     public function destroy(Faculty $faculty)
     {
+        if ($faculty->studyPrograms()->count() > 0) {
+            return redirect()->route('admin.faculties.index')->with('error', 'Fakultas tidak dapat dihapus karena masih memiliki program studi terkait.');
+        }
+
         $faculty->delete();
         return redirect()->route('admin.faculties.index')->with('success', 'Fakultas berhasil dihapus.');
     }

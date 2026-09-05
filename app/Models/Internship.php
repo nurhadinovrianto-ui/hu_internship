@@ -55,6 +55,11 @@ class Internship extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    public function studentLocation(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(StudentLocation::class);
+    }
+
     public function logbooks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Logbook::class);
@@ -148,5 +153,20 @@ class Internship extends Model
     public function getDpl(): ?Lecturer
     {
         return $this->dplAssignment?->lecturer;
+    }
+
+    public function defense(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(InternshipDefense::class);
+    }
+
+    public function surveys(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(InternshipSurvey::class);
+    }
+
+    public function selfProposal(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(SelfProposedInternship::class);
     }
 }

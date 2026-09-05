@@ -8,6 +8,8 @@ use App\Models\StudentRequirement;
 use App\Models\AcademicPeriod;
 use Illuminate\Http\Request;
 
+use App\Models\StudyProgram;
+
 class PaymentController extends Controller
 {
     public function index(Request $request)
@@ -18,20 +20,40 @@ class PaymentController extends Controller
             'requirements' => fn($q) => $period ? $q->where('academic_period_id', $period->id) : $q
         ]);
 
-        if ($request->search) {
-            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%{$request->search}%"))
-                  ->orWhere('nim', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nim', 'like', "%{$search}%")
+                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+            });
         }
 
-        if ($request->status === 'cleared') {
-            $query->whereHas('requirements', fn($q) => $q->where('payment_cleared', true));
-        } elseif ($request->status === 'pending') {
-            $query->whereHas('requirements', fn($q) => $q->where('payment_cleared', false));
+        if ($request->filled('study_program_id')) {
+            $query->where('study_program_id', $request->study_program_id);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'cleared') {
+                $query->whereHas('requirements', function($q) use ($period) {
+                    if ($period) $q->where('academic_period_id', $period->id);
+                    $q->where('payment_cleared', true);
+                });
+            } elseif ($request->status === 'pending') {
+                $query->where(function($q) use ($period) {
+                    $q->whereDoesntHave('requirements', function($rq) use ($period) {
+                        if ($period) $rq->where('academic_period_id', $period->id);
+                    })->orWhereHas('requirements', function($rq) use ($period) {
+                        if ($period) $rq->where('academic_period_id', $period->id);
+                        $rq->where('payment_cleared', false);
+                    });
+                });
+            }
         }
 
         $students = $query->paginate(25)->withQueryString();
+        $studyPrograms = StudyProgram::orderBy('name')->get();
 
-        return view('finance.payments.index', compact('students', 'period'));
+        return view('finance.payments.index', compact('students', 'period', 'studyPrograms'));
     }
 
     public function validatePayment(Student $student)
@@ -51,7 +73,8 @@ class PaymentController extends Controller
             ]
         );
 
-        return back()->with('success', "Pembayaran {$student->user->name} telah diverifikasi.");
+        $studentName = $student->user?->name ?? 'Mahasiswa';
+        return back()->with('success', "Pembayaran {$studentName} telah diverifikasi.");
     }
 
     public function revokePayment(Student $student)
@@ -66,7 +89,8 @@ class PaymentController extends Controller
                 'payment_verified_by' => null,
             ]);
 
-        return back()->with('success', "Verifikasi pembayaran {$student->user->name} dicabut.");
+        $studentName = $student->user?->name ?? 'Mahasiswa';
+        return back()->with('success', "Verifikasi pembayaran {$studentName} dicabut.");
     }
 
     public function export()
@@ -76,6 +100,7 @@ class PaymentController extends Controller
             return back()->with('error', 'Tidak ada periode aktif untuk diexport.');
         }
 
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PaymentExport($period), 'Rekap_Pembayaran_' . $period->name . '_' . date('Ymd_His') . '.xlsx');
+        $cleanPeriodName = str_replace(['/', '\\'], '-', $period->name);
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PaymentExport($period), 'Rekap_Pembayaran_' . $cleanPeriodName . '_' . date('Ymd_His') . '.xlsx');
     }
 }

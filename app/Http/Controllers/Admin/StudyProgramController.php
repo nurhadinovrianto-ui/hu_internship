@@ -9,9 +9,28 @@ use Illuminate\Http\Request;
 
 class StudyProgramController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $studyPrograms = StudyProgram::with('faculty')->withCount('students')->get();
+        $query = StudyProgram::with('faculty')->withCount('students');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('head_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('faculty_id')) {
+            $query->where('faculty_id', $request->faculty_id);
+        }
+
+        if ($request->filled('degree')) {
+            $query->where('degree', $request->degree);
+        }
+
+        $studyPrograms = $query->latest()->paginate(10)->withQueryString();
         $faculties = Faculty::where('status', 'active')->get();
         return view('admin.study-programs.index', compact('studyPrograms', 'faculties'));
     }
@@ -32,6 +51,11 @@ class StudyProgramController extends Controller
         ]);
         StudyProgram::create($validated);
         return redirect()->route('admin.study-programs.index')->with('success', 'Program Studi berhasil ditambah.');
+    }
+
+    public function show(StudyProgram $studyProgram)
+    {
+        return redirect()->route('admin.study-programs.edit', $studyProgram);
     }
 
     public function edit(StudyProgram $studyProgram)
@@ -55,6 +79,10 @@ class StudyProgramController extends Controller
 
     public function destroy(StudyProgram $studyProgram)
     {
+        if ($studyProgram->students()->count() > 0 || $studyProgram->lecturers()->count() > 0) {
+            return redirect()->route('admin.study-programs.index')->with('error', 'Program Studi tidak dapat dihapus karena masih memiliki data mahasiswa atau dosen terkait.');
+        }
+
         $studyProgram->delete();
         return redirect()->route('admin.study-programs.index')->with('success', 'Program Studi dihapus.');
     }

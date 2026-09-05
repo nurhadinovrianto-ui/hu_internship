@@ -135,6 +135,7 @@ class CertificateController extends Controller
         $verifyUrl = url('/verify-certificate/' . $certificate->certificate_number);
         $qrCode = base64_encode(QrCode::format('svg')->size(140)->generate($verifyUrl));
 
+        $safeNim = str_replace(['/', '\\'], '-', $student->nim);
         if ($template) {
             $data = [
                 'student' => $student,
@@ -145,7 +146,7 @@ class CertificateController extends Controller
                 'qrCode' => $qrCode,
             ];
             $pdf = Pdf::loadView('industry.certificate.pdf', $data)->setPaper('a4', 'landscape');
-            return $pdf->download("Sertifikat_Industri_{$student->nim}.pdf");
+            return $pdf->download("Sertifikat_Industri_{$safeNim}.pdf");
         }
 
         $data = [
@@ -160,6 +161,6 @@ class CertificateController extends Controller
         $pdf = Pdf::loadView('student.certificate.pdf', $data)
             ->setPaper('a4', 'landscape');
 
-        return $pdf->download("Sertifikat_Magang_{$student->nim}.pdf");
+        return $pdf->download("Sertifikat_Magang_{$safeNim}.pdf");
     }
 }

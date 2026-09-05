@@ -8,32 +8,47 @@ use App\Models\Internship;
 use App\Models\Student;
 use App\Models\Lecturer;
 use App\Models\AcademicPeriod;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $period = AcademicPeriod::getActive();
+        $periods = AcademicPeriod::orderByDesc('start_date')->get();
+        $selectedPeriodId = $request->get('period_id');
+        if ($selectedPeriodId === 'all') {
+            $period = null;
+        } elseif ($selectedPeriodId) {
+            $period = AcademicPeriod::find($selectedPeriodId) ?? AcademicPeriod::getActive();
+            $selectedPeriodId = $period?->id;
+        } else {
+            $period = AcademicPeriod::getActive();
+            $selectedPeriodId = $period?->id;
+        }
+        $periodId = $period?->id;
+
         $prodi = auth()->user()->managedStudyProgram();
         $prodiId = $prodi?->id;
 
         $stats = [
-            'pending_applications' => Application::whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'pending')->count(),
-            'approved_applications' => Application::whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'kaprodi_approved')->count(),
-            'waiting_dpl' => Internship::whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'waiting_dpl')->count(),
-            'active_internships' => Internship::whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'active')->count(),
-            'total_students' => Student::where('study_program_id', $prodiId)->count(),
+            'pending_applications' => Application::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'pending')->count(),
+            'approved_applications' => Application::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'kaprodi_approved')->count(),
+            'waiting_dpl' => Internship::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'waiting_dpl')->count(),
+            'active_internships' => Internship::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))->where('status', 'active')->count(),
+            'total_students' => Student::forPeriod($periodId)->where('study_program_id', $prodiId)->count(),
+            'all_students_count' => Student::where('study_program_id', $prodiId)->count(),
             'available_dpl' => Lecturer::where('study_program_id', $prodiId)->get()->filter(fn($l) => $l->hasCapacity())->count(),
         ];
 
         $pendingApplications = Application::with(['student.user', 'vacancy.industry'])
+            ->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))
             ->whereHas('student', fn($q) => $q->where('study_program_id', $prodiId))
             ->where('status', 'pending')
             ->latest()
             ->limit(10)
             ->get();
 
-        return view('kaprodi.dashboard', compact('stats', 'pendingApplications', 'period', 'prodi'));
+        return view('kaprodi.dashboard', compact('stats', 'pendingApplications', 'period', 'periods', 'selectedPeriodId', 'prodi'));
     }
 
     public function statistics()

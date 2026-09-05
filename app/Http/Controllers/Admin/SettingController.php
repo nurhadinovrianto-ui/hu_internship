@@ -46,6 +46,11 @@ class SettingController extends Controller
             'settings_files.*' => 'nullable|image|mimes:jpeg,png,jpg,svg,ico|max:2048',
         ]);
 
+        $totalWeight = (int)$validated['settings']['grade_weight_industry'] + (int)$validated['settings']['grade_weight_dpl'];
+        if ($totalWeight !== 100) {
+            return back()->withInput()->with('error', "Total bobot penilaian harus berjumlah 100% (Industri: {$validated['settings']['grade_weight_industry']}%, DPL: {$validated['settings']['grade_weight_dpl']}%, Total: {$totalWeight}%).");
+        }
+
         foreach ($validated['settings'] as $key => $value) {
             Setting::setValue($key, $value);
         }

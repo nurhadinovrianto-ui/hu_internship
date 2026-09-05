@@ -9,15 +9,43 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\GradeExport;
 
+use App\Models\StudyProgram;
+
 class GradeConversionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $internships = Internship::with(['student.user', 'vacancy.industry', 'gradeConversion', 'assessments'])
-            ->where('status', 'completed')
-            ->paginate(25);
+        $query = Internship::with(['student.user', 'student.studyProgram', 'vacancy.industry', 'gradeConversion', 'assessments'])
+            ->where('status', 'completed');
 
-        return view('baak.grade-conversions.index', compact('internships'));
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('student', function ($sq) use ($search) {
+                    $sq->where('nim', 'like', "%{$search}%")
+                       ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                })->orWhereHas('vacancy.industry', function ($iq) use ($search) {
+                    $iq->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if ($request->filled('study_program_id')) {
+            $query->whereHas('student', fn($sq) => $sq->where('study_program_id', $request->study_program_id));
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'converted') {
+                $query->whereHas('gradeConversion');
+            } elseif ($request->status === 'pending') {
+                $query->whereDoesntHave('gradeConversion');
+            }
+        }
+
+        $internships = $query->latest()->paginate(25)->withQueryString();
+        $studyPrograms = StudyProgram::orderBy('name')->get();
+
+        return view('baak.grade-conversions.index', compact('internships', 'studyPrograms'));
     }
 
     public function store(Request $request, Internship $internship)

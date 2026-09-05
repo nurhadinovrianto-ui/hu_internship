@@ -20,7 +20,10 @@ class LetterController extends Controller
         // Jika user adalah mahasiswa, pastikan itu lamarannya
         if (auth()->user()->hasRole('mahasiswa')) {
             $student = auth()->user()->student;
-            abort_unless($application->student_id === $student->id, 403);
+            abort_unless($student && $application->student_id == $student->id, 403);
+        } elseif (auth()->user()->hasRole('kaprodi')) {
+            $studyProgram = auth()->user()->managedStudyProgram();
+            abort_unless($studyProgram && $application->student?->study_program_id == $studyProgram->id, 403);
         }
 
         $application->load(['student.user', 'student.studyProgram.faculty', 'vacancy.industry', 'academicPeriod', 'kaprodiReviewer.lecturer']);
@@ -28,13 +31,14 @@ class LetterController extends Controller
         $data = [
             'application' => $application,
             'student' => $application->student,
-            'industry' => $application->vacancy->industry,
+            'industry' => $application->vacancy?->industry,
             'date' => Carbon::parse($application->kaprodi_reviewed_at ?? now())->translatedFormat('d F Y'),
         ];
 
         $pdf = Pdf::loadView('student.letters.pengantar-pdf', $data)
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download("Surat_Pengantar_Magang_{$application->student->nim}.pdf");
+        $nim = str_replace(['/', '\\'], '-', $application->student?->nim ?? 'NIM');
+        return $pdf->download("Surat_Pengantar_Magang_{$nim}.pdf");
     }
 }

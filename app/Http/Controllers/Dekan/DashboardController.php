@@ -9,38 +9,56 @@ use App\Models\Internship;
 use App\Models\Industry;
 use App\Models\Application;
 use App\Models\StudyProgram;
+use App\Models\AcademicPeriod;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $faculty = auth()->user()->managedFaculty();
         $facultyId = $faculty?->id;
 
+        $periods = AcademicPeriod::orderByDesc('start_date')->get();
+        $selectedPeriodId = $request->get('period_id');
+        if ($selectedPeriodId === 'all') {
+            $period = null;
+        } elseif ($selectedPeriodId) {
+            $period = AcademicPeriod::find($selectedPeriodId) ?? AcademicPeriod::getActive();
+            $selectedPeriodId = $period?->id;
+        } else {
+            $period = AcademicPeriod::getActive();
+            $selectedPeriodId = $period?->id;
+        }
+        $periodId = $period?->id;
+
         $stats = [
             'total_prodi' => StudyProgram::where('faculty_id', $facultyId)->count(),
-            'total_students' => Student::whereHas('studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->count(),
-            'active_internships' => Internship::whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->where('status', 'active')->count(),
+            'total_students' => Student::forPeriod($periodId)->whereHas('studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->count(),
+            'all_students_count' => Student::whereHas('studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->count(),
+            'active_internships' => Internship::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->where('status', 'active')->count(),
             'partner_industries' => Industry::where('is_active', true)->count(),
-            'total_applications' => Application::whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->count(),
-            'completed_internships' => Internship::whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->where('status', 'completed')->count(),
+            'total_applications' => Application::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->count(),
+            'completed_internships' => Internship::when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))->where('status', 'completed')->count(),
         ];
 
         $internshipsByProdi = Internship::with('student.studyProgram.faculty')
+            ->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))
             ->whereHas('student.studyProgram', fn($q) => $q->where('faculty_id', $facultyId))
             ->where('status', 'active')
             ->get()
             ->groupBy(fn($i) => $i->student?->studyProgram?->name ?? 'Tidak Diketahui');
 
         $topIndustries = Industry::withCount(['vacancies as internship_count' => fn($q) =>
-            $q->whereHas('applications', fn($a) => 
-                $a->where('status', 'industry_accepted')
+            $q->when($periodId, fn($pq) => $pq->where('academic_period_id', $periodId))
+              ->whereHas('applications', fn($a) => 
+                $a->when($periodId, fn($apq) => $apq->where('academic_period_id', $periodId))
+                  ->where('status', 'industry_accepted')
                   ->whereHas('student.studyProgram', fn($sp) => $sp->where('faculty_id', $facultyId))
             )
         ])->orderByDesc('internship_count')->limit(5)->get();
 
-        return view('dekan.dashboard', compact('stats', 'internshipsByProdi', 'topIndustries', 'faculty'));
+        return view('dekan.dashboard', compact('stats', 'internshipsByProdi', 'topIndustries', 'faculty', 'period', 'periods', 'selectedPeriodId'));
     }
 
     public function statistics()
@@ -49,10 +67,25 @@ class DashboardController extends Controller
         return view('dekan.statistics', compact('faculty'));
     }
 
-    public function industries()
+    public function industries(Request $request)
     {
         $faculty = auth()->user()->managedFaculty();
-        $industries = Industry::withCount('vacancies')->latest()->get();
+        $query = Industry::withCount('vacancies');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%")
+                  ->orWhere('industry_type', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('partnership_status')) {
+            $query->where('partnership_status', $request->partnership_status);
+        }
+
+        $industries = $query->latest()->paginate(15)->withQueryString();
         return view('dekan.industries', compact('industries', 'faculty'));
     }
 

@@ -7,6 +7,7 @@ use App\Models\Vacancy;
 use App\Models\Application;
 use App\Models\Internship;
 use App\Models\Assessment;
+use App\Models\AcademicPeriod;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -16,33 +17,47 @@ class DashboardController extends Controller
         return auth()->user()->industrySupervisor;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $supervisor = $this->getSupervisor();
 
+        $periods = AcademicPeriod::orderByDesc('start_date')->get();
+        $selectedPeriodId = $request->get('period_id');
+        if ($selectedPeriodId === 'all') {
+            $period = null;
+        } elseif ($selectedPeriodId) {
+            $period = AcademicPeriod::find($selectedPeriodId) ?? AcademicPeriod::getActive();
+            $selectedPeriodId = $period?->id;
+        } else {
+            $period = AcademicPeriod::getActive();
+            $selectedPeriodId = $period?->id;
+        }
+        $periodId = $period?->id;
+
         $stats = [
-            'total_vacancies' => Vacancy::where('industry_supervisor_id', $supervisor?->id)->count(),
-            'active_vacancies' => Vacancy::where('industry_supervisor_id', $supervisor?->id)->where('is_published', true)->where('is_closed', false)->count(),
-            'total_applicants' => Application::whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))->count(),
-            'pending_applicants' => Application::whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))->where('status', 'kaprodi_approved')->count(),
-            'active_interns' => Internship::whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))->where('status', 'active')->count(),
+            'total_vacancies' => Vacancy::where('industry_supervisor_id', $supervisor?->id)->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->count(),
+            'active_vacancies' => Vacancy::where('industry_supervisor_id', $supervisor?->id)->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->where('is_published', true)->where('is_closed', false)->count(),
+            'total_applicants' => Application::whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->count(),
+            'pending_applicants' => Application::whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->where('status', 'kaprodi_approved')->count(),
+            'active_interns' => Internship::whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))->where('status', 'active')->count(),
         ];
 
         $recentApplications = Application::with(['student.user', 'vacancy'])
             ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))
+            ->when($periodId, fn($q) => $q->where('academic_period_id', $periodId))
             ->where('status', 'kaprodi_approved')
             ->latest()
             ->limit(10)
             ->get();
 
-        return view('industry.dashboard', compact('stats', 'recentApplications'));
+        return view('industry.dashboard', compact('stats', 'recentApplications', 'period', 'periods', 'selectedPeriodId'));
     }
 
     public function assessment(Request $request)
     {
         $supervisor = $this->getSupervisor();
         $query = Internship::with(['student.user', 'student.studyProgram', 'vacancy', 'assessments'])
-            ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id))
+            ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor?->id)->orWhere('industry_id', $supervisor?->industry_id))
             ->whereIn('status', [Internship::STATUS_ACTIVE, Internship::STATUS_COMPLETED]);
 
         if ($request->filled('search')) {
@@ -83,7 +98,13 @@ class DashboardController extends Controller
     public function storeAssessment(Request $request, Internship $internship)
     {
         $supervisor = $this->getSupervisor();
-        $criteria = \App\Models\AssessmentCriterion::getForIndustry($supervisor?->industry_id);
+        $isAllowed = $supervisor && (
+            $internship->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $internship->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        abort_unless($isAllowed, 403, 'Akses ditolak.');
+
+        $criteria = \App\Models\AssessmentCriterion::getForIndustry($supervisor->industry_id);
 
         $validated = $request->validate([
             'scores' => 'nullable|array',

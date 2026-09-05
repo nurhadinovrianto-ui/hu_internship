@@ -26,7 +26,7 @@ class CertificateController extends Controller
         }
 
         $query = Internship::with(['student.user', 'student.studyProgram', 'vacancy', 'certificate', 'assessments'])
-            ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor->id))
+            ->whereHas('vacancy', fn($q) => $q->where('industry_supervisor_id', $supervisor->id)->orWhere('industry_id', $supervisor->industry_id))
             ->whereIn('status', [Internship::STATUS_ACTIVE, Internship::STATUS_COMPLETED]);
 
         if ($request->filled('search')) {
@@ -35,6 +35,14 @@ class CertificateController extends Controller
                 $q->where('nim', 'like', "%{$search}%")
                   ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
             });
+        }
+
+        if ($request->filled('cert_status')) {
+            if ($request->cert_status === 'issued') {
+                $query->has('certificate');
+            } elseif ($request->cert_status === 'pending') {
+                $query->doesntHave('certificate');
+            }
         }
 
         $internships = $query->latest()->paginate(10)->withQueryString();
@@ -101,7 +109,11 @@ class CertificateController extends Controller
     public function generate(Internship $internship)
     {
         $supervisor = $this->getSupervisor();
-        if (((int) $internship->vacancy->industry_supervisor_id) !== ((int) $supervisor?->id)) {
+        $isAllowed = $supervisor && (
+            $internship->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $internship->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        if (!$isAllowed) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -131,7 +143,11 @@ class CertificateController extends Controller
     public function uploadManual(Request $request, Internship $internship)
     {
         $supervisor = $this->getSupervisor();
-        if ($internship->vacancy->industry_supervisor_id !== $supervisor?->id) {
+        $isAllowed = $supervisor && (
+            $internship->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $internship->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        if (!$isAllowed) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -168,7 +184,11 @@ class CertificateController extends Controller
     public function download(Internship $internship)
     {
         $supervisor = $this->getSupervisor();
-        if (((int) $internship->vacancy->industry_supervisor_id) !== ((int) $supervisor?->id)) {
+        $isAllowed = $supervisor && (
+            $internship->vacancy?->industry_supervisor_id == $supervisor->id ||
+            ($supervisor->industry_id && $internship->vacancy?->industry_id == $supervisor->industry_id)
+        );
+        if (!$isAllowed) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -197,7 +217,8 @@ class CertificateController extends Controller
             'qrCode' => $qrCode,
         ];
 
+        $safeNim = str_replace(['/', '\\'], '-', $student->nim);
         $pdf = Pdf::loadView('industry.certificate.pdf', $data)->setPaper('a4', 'landscape');
-        return $pdf->download("Sertifikat_Industri_{$student->nim}.pdf");
+        return $pdf->download("Sertifikat_Industri_{$safeNim}.pdf");
     }
 }

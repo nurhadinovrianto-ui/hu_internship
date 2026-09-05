@@ -38,22 +38,23 @@ class UsersImport implements ToCollection, WithHeadingRow
                 
                 // Password default to nim/nip if available, or password123
                 $password = 'password123';
-                if ($this->role === 'mahasiswa' && isset($row['nim'])) {
-                    $password = $row['nim'];
-                } elseif (in_array($this->role, ['dpl', 'kaprodi', 'dekan']) && isset($row['nip'])) {
-                    $password = $row['nip'];
+                if ($this->role === 'mahasiswa' && !empty($row['nim'])) {
+                    $password = (string) $row['nim'];
+                } elseif (in_array($this->role, ['dpl', 'kaprodi', 'dekan']) && !empty($row['nip'])) {
+                    $password = (string) $row['nip'];
                 }
 
-                // Create or Update User
-                $user = User::updateOrCreate(
-                    ['email' => $row['email']],
-                    [
-                        'name' => $row['name'] ?? 'Unknown',
-                        'phone' => $row['phone'] ?? null,
-                        'password' => Hash::make($password),
-                        'status' => 'active',
-                    ]
-                );
+                // Create or Update User without resetting existing user's password
+                $user = User::firstOrNew(['email' => $row['email']]);
+                $user->name = !empty($row['name']) ? $row['name'] : ($user->name ?? 'Unknown');
+                if (isset($row['phone']) && $row['phone'] !== '') {
+                    $user->phone = $row['phone'];
+                }
+                if (!$user->exists) {
+                    $user->password = Hash::make($password);
+                    $user->status = 'active';
+                }
+                $user->save();
 
                 // Assign Role
                 if ($roleToAssign !== 'staff') {
@@ -65,33 +66,33 @@ class UsersImport implements ToCollection, WithHeadingRow
                     Student::updateOrCreate(
                         ['user_id' => $user->id],
                         [
-                            'nim' => $row['nim'] ?? null,
-                            'batch' => $row['batch'] ?? null,
-                            'current_semester' => $row['current_semester'] ?? null,
-                            'total_sks' => $row['total_sks'] ?? 0,
-                            'gpa' => $row['gpa'] ?? 0,
-                            'study_program_id' => $row['study_program_id'] ?? null,
+                            'nim' => !empty($row['nim']) ? $row['nim'] : null,
+                            'batch' => !empty($row['batch']) ? $row['batch'] : now()->year,
+                            'current_semester' => !empty($row['current_semester']) ? (int) $row['current_semester'] : 1,
+                            'total_sks' => !empty($row['total_sks']) ? (int) $row['total_sks'] : 0,
+                            'gpa' => !empty($row['gpa']) ? (float) $row['gpa'] : 0,
+                            'study_program_id' => !empty($row['study_program_id']) ? (int) $row['study_program_id'] : null,
                         ]
                     );
                 } elseif (in_array($this->role, ['dpl', 'kaprodi', 'dekan'])) {
                     Lecturer::updateOrCreate(
                         ['user_id' => $user->id],
                         [
-                            'nip' => $row['nip'] ?? null,
-                            'nidn' => $row['nidn'] ?? null,
-                            'position' => $row['position'] ?? null,
-                            'specialization' => $row['specialization'] ?? null,
-                            'max_mentee' => $row['max_mentee'] ?? 10,
-                            'study_program_id' => $row['study_program_id'] ?? null,
+                            'nip' => !empty($row['nip']) ? $row['nip'] : null,
+                            'nidn' => !empty($row['nidn']) ? $row['nidn'] : null,
+                            'position' => !empty($row['position']) ? $row['position'] : null,
+                            'specialization' => !empty($row['specialization']) ? $row['specialization'] : null,
+                            'max_mentee' => !empty($row['max_mentee']) ? (int) $row['max_mentee'] : 10,
+                            'study_program_id' => !empty($row['study_program_id']) ? (int) $row['study_program_id'] : null,
                         ]
                     );
                 } elseif ($this->role === 'supervisor-industri') {
                     IndustrySupervisor::updateOrCreate(
                         ['user_id' => $user->id],
                         [
-                            'industry_id' => $row['industry_id'] ?? null,
-                            'position' => $row['position'] ?? null,
-                            'division' => $row['division'] ?? null,
+                            'industry_id' => !empty($row['industry_id']) ? (int) $row['industry_id'] : null,
+                            'position' => !empty($row['position']) ? $row['position'] : null,
+                            'division' => !empty($row['division']) ? $row['division'] : null,
                         ]
                     );
                 }

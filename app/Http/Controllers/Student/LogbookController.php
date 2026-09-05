@@ -32,12 +32,20 @@ class LogbookController extends Controller
 
         $query = $internship->logbooks()->with(['reviews.reviewer']);
 
-        if ($request->month) {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('month')) {
             $query->whereMonth('date', date('m', strtotime($request->month)))
                   ->whereYear('date', date('Y', strtotime($request->month)));
         }
 
-        if ($request->status) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
@@ -65,14 +73,15 @@ class LogbookController extends Controller
 
         $logbooks = $query->orderBy('date', 'asc')->get();
 
+        $safeName = str_replace(['/', '\\'], '-', $student->user->name);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('student.logbooks.export', compact('internship', 'logbooks'));
-        return $pdf->download('Logbook_Magang_' . $student->user->name . '.pdf');
+        return $pdf->download('Logbook_Magang_' . $safeName . '.pdf');
     }
 
     public function show(Logbook $logbook)
     {
         $student = auth()->user()->student;
-        abort_unless( ( (int) $logbook->student_id) === $student?->id, 403);
+        abort_unless($logbook->student_id == $student?->id, 403);
 
         $logbook->load(['reviews.reviewer', 'internship.vacancy.industry']);
 
@@ -138,7 +147,7 @@ class LogbookController extends Controller
     public function edit(Logbook $logbook)
     {
         $internship = $this->getActiveInternship();
-        abort_unless($logbook->internship_id === $internship?->id, 403);
+        abort_unless($logbook->internship_id == $internship?->id, 403);
 
         if ($logbook->status !== 'revision_required') {
             return back()->with('error', 'Logbook ini tidak memerlukan revisi.');
@@ -150,7 +159,7 @@ class LogbookController extends Controller
     public function update(Request $request, Logbook $logbook)
     {
         $internship = $this->getActiveInternship();
-        abort_unless($logbook->internship_id === $internship?->id, 403);
+        abort_unless($logbook->internship_id == $internship?->id, 403);
 
         if ($logbook->status !== 'revision_required') {
             return back()->with('error', 'Logbook ini tidak memerlukan revisi.');
@@ -159,11 +168,24 @@ class LogbookController extends Controller
         $maxLogbookSize = \App\Models\Setting::getValue('max_logbook_size_kb', 5120);
 
         $request->validate([
+            'date' => 'required|date|before_or_equal:today',
             'title' => 'required|string|max:255',
             'description' => 'required|string|min:20',
             'learning_outcomes' => 'nullable|string',
             'attachment' => "nullable|file|mimes:pdf,zip,rar,doc,docx,jpg,jpeg,png|max:{$maxLogbookSize}",
         ]);
+
+        // Cek jika logbook di tanggal tersebut sudah ada (selain yang sedang direvisi)
+        if ($request->date !== $logbook->date->toDateString()) {
+            $exists = Logbook::where('internship_id', $internship->id)
+                ->where('date', $request->date)
+                ->where('id', '!=', $logbook->id)
+                ->exists();
+
+            if ($exists) {
+                return back()->withInput()->with('error', 'Anda sudah membuat logbook untuk tanggal tersebut.');
+            }
+        }
 
         $attachmentPath = $logbook->attachment;
         if ($request->hasFile('attachment')) {
@@ -171,6 +193,7 @@ class LogbookController extends Controller
         }
 
         $logbook->update([
+            'date' => $request->date,
             'title' => $request->title,
             'description' => $request->description,
             'learning_outcomes' => $request->learning_outcomes,

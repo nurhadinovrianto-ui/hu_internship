@@ -19,15 +19,19 @@ class UserController extends Controller
     {
         $query = User::with('roles')->latest();
 
-        if ($request->search) {
+        if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('email', 'like', "%{$request->search}%");
             });
         }
 
-        if ($request->role) {
+        if ($request->filled('role')) {
             $query->role($request->role);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         $users = $query->paginate(20)->withQueryString();
@@ -265,7 +269,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        if ($user->id === auth()->id()) {
+        if ($user->id == auth()->id()) {
             return back()->with('error', 'Tidak bisa menghapus akun sendiri.');
         }
         $user->delete();

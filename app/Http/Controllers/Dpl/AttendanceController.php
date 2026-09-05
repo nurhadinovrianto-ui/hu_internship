@@ -22,14 +22,24 @@ class AttendanceController extends Controller
         $query = Attendance::with(['student.user', 'internship.vacancy.industry'])
             ->whereIn('internship_id', $internshipIds);
 
-        if ($request->search) {
-            $query->whereHas('student.user', function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('student', function ($sq) use ($search) {
+                $sq->where('nim', 'like', "%{$search}%")
+                   ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
             });
         }
         
-        if ($request->date) {
+        if ($request->filled('date')) {
             $query->where('date', $request->date);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
         }
 
         $attendances = $query->latest('date')->paginate(20)->withQueryString();

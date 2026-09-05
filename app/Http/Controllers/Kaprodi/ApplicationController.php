@@ -17,7 +17,21 @@ class ApplicationController extends Controller
             ->whereHas('student', fn($q) => $q->where('study_program_id', $prodi?->id))
             ->latest();
 
-        if ($request->status) {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('student', function ($sq) use ($search) {
+                    $sq->where('nim', 'like', "%{$search}%")
+                       ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                })->orWhereHas('vacancy', function ($vq) use ($search) {
+                    $vq->where('position', 'like', "%{$search}%")
+                       ->orWhere('title', 'like', "%{$search}%")
+                       ->orWhereHas('industry', fn($iq) => $iq->where('name', 'like', "%{$search}%"));
+                });
+            });
+        }
+
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
@@ -28,7 +42,7 @@ class ApplicationController extends Controller
     public function show(Application $application)
     {
         $prodi = auth()->user()->managedStudyProgram();
-        abort_unless( ((int) $application->student->study_program_id) === $prodi?->id, 403, 'Anda tidak memiliki akses ke data aplikasi ini.');
+        abort_unless($application->student->study_program_id == $prodi?->id, 403, 'Anda tidak memiliki akses ke data aplikasi ini.');
 
         $application->load(['student.user', 'student.studyProgram', 'vacancy.industry', 'vacancy.supervisor.user']);
         return view('kaprodi.applications.show', compact('application'));
@@ -36,6 +50,9 @@ class ApplicationController extends Controller
 
     public function approve(Request $request, Application $application)
     {
+        $prodi = auth()->user()->managedStudyProgram();
+        abort_unless($application->student->study_program_id == $prodi?->id, 403, 'Akses ditolak.');
+
         $request->validate(['notes' => 'nullable|string|max:500']);
 
         if ($application->status !== Application::STATUS_PENDING) {
@@ -70,6 +87,9 @@ class ApplicationController extends Controller
 
     public function reject(Request $request, Application $application)
     {
+        $prodi = auth()->user()->managedStudyProgram();
+        abort_unless($application->student->study_program_id == $prodi?->id, 403, 'Akses ditolak.');
+
         $request->validate(['notes' => 'required|string|max:500']);
 
         if ($application->status !== Application::STATUS_PENDING) {

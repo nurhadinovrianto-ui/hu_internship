@@ -20,6 +20,9 @@ class ApplicationController extends Controller
     public function browse(Request $request)
     {
         $student = $this->getStudent();
+        if (!$student) {
+            return redirect()->route('auth.pending');
+        }
         $period = AcademicPeriod::getActive();
 
         if (!$period) {
@@ -56,18 +59,24 @@ class ApplicationController extends Controller
             return view('student.vacancies.browse', ['vacancies' => collect(), 'blocked' => true, 'reason' => 'Anda sudah memiliki program magang yang sedang berjalan atau menunggu penugasan DPL.']);
         }
 
-        $query = Vacancy::with(['industry'])
+        $query = Vacancy::with(['industry', 'studyProgram'])
             ->where('academic_period_id', $period->id)
+            ->forStudent($student)
             ->where('is_published', true)
             ->where('is_closed', false)
             ->where('apply_deadline', '>=', now()->toDateString());
 
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('title', 'like', "%{$request->search}%")
-                  ->orWhere('position', 'like', "%{$request->search}%")
-                  ->orWhereHas('industry', fn($ind) => $ind->where('name', 'like', "%{$request->search}%"));
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('position', 'like', "%{$search}%")
+                  ->orWhereHas('industry', fn($ind) => $ind->where('name', 'like', "%{$search}%"));
             });
+        }
+
+        if ($request->filled('work_type')) {
+            $query->where('work_type', $request->work_type);
         }
 
         $vacancies = $query->paginate(12)->withQueryString();
@@ -84,9 +93,12 @@ class ApplicationController extends Controller
     public function apply(Request $request, Vacancy $vacancy)
     {
         $student = $this->getStudent();
+        if (!$student) {
+            return redirect()->route('auth.pending');
+        }
         $period = AcademicPeriod::getActive();
 
-        if (!$period || ((int) $vacancy->academic_period_id) !== ((int) $period->id)) {
+        if (!$period || $vacancy->academic_period_id != $period->id) {
             return back()->with('error', 'Lowongan ini tidak tersedia untuk periode aktif.');
         }
 
@@ -121,14 +133,22 @@ class ApplicationController extends Controller
         }
 
         $maxCvSize = \App\Models\Setting::getValue('max_cv_size_kb', 2048);
+        $useProfileCv = $request->boolean('use_profile_cv') && !empty($student->cv_file);
 
         $request->validate([
-            'cv_file' => "required|file|mimes:pdf|max:{$maxCvSize}",
+            'cv_file' => $useProfileCv ? "nullable|file|mimes:pdf|max:{$maxCvSize}" : "required|file|mimes:pdf|max:{$maxCvSize}",
             'motivation_letter' => "nullable|file|mimes:pdf|max:{$maxCvSize}",
             'cover_letter' => 'nullable|string|max:1000',
         ]);
 
-        $cvPath = $request->file('cv_file')->store('student_cvs', 'public');
+        if ($request->hasFile('cv_file')) {
+            $cvPath = $request->file('cv_file')->store('student_cvs', 'public');
+        } elseif ($useProfileCv) {
+            $cvPath = $student->cv_file;
+        } else {
+            return back()->with('error', 'Silakan unggah dokumen CV Anda.');
+        }
+
         $mlPath = $request->hasFile('motivation_letter') ? $request->file('motivation_letter')->store('student_mls', 'public') : null;
 
         $application = Application::create([
@@ -142,11 +162,13 @@ class ApplicationController extends Controller
         ]);
 
         // Notify corresponding Kaprodi
-        $kaprodi = $application->student->studyProgram->head;
+        $kaprodi = $application->student?->studyProgram?->head;
         if ($kaprodi) {
+            $studentName = $student->user?->name ?? 'Mahasiswa';
+            $positionName = $application->vacancy?->position ?? ($application->vacancy?->title ?? 'Magang');
             $kaprodi->notify(new InternshipStatusNotification(
                 'Pengajuan Magang Baru',
-                "Mahasiswa {$student->user->name} mengajukan lamaran untuk posisi {$application->vacancy->position}. Mohon segera direview.",
+                "Mahasiswa {$studentName} mengajukan lamaran untuk posisi {$positionName}. Mohon segera direview.",
                 route('kaprodi.applications.show', $application->id)
             ));
         }
@@ -154,13 +176,30 @@ class ApplicationController extends Controller
         return redirect()->route('student.applications.index')->with('success', 'Lamaran berhasil dikirim. Menunggu validasi Kaprodi.');
     }
 
-    public function myApplications()
+    public function myApplications(Request $request)
     {
         $student = $this->getStudent();
-        $applications = $student->applications()
-            ->with(['vacancy.industry'])
-            ->latest()
-            ->paginate(15);
+        if (!$student) {
+            return redirect()->route('auth.pending');
+        }
+
+        $query = $student->applications()
+            ->with(['vacancy.industry']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('vacancy', function ($vq) use ($search) {
+                $vq->where('title', 'like', "%{$search}%")
+                   ->orWhere('position', 'like', "%{$search}%")
+                   ->orWhereHas('industry', fn($iq) => $iq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $applications = $query->latest()->paginate(15)->withQueryString();
 
         return view('student.applications.index', compact('applications'));
     }
@@ -168,7 +207,7 @@ class ApplicationController extends Controller
     public function showApplication(Application $application)
     {
         $student = $this->getStudent();
-        abort_unless( ((int) $application->student_id) === $student->id, 403);
+        abort_unless($student && $application->student_id == $student->id, 403);
 
         $application->load(['vacancy.industry', 'kaprodiReviewer']);
         return view('student.applications.show', compact('application'));

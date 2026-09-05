@@ -37,6 +37,11 @@ class AcademicPeriod extends Model
         return $this->hasMany(Application::class);
     }
 
+    public function internships(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Internship::class);
+    }
+
     public static function getActive(): ?self
     {
         return self::where('is_active', true)->first();

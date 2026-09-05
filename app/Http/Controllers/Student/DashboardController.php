@@ -53,6 +53,9 @@ class DashboardController extends Controller
     public function updateProfile(Request $request)
     {
         $student = $this->getStudent();
+        if (!$student) {
+            return back()->with('error', 'Profil mahasiswa tidak ditemukan.');
+        }
         $user = auth()->user();
 
         $validated = $request->validate([

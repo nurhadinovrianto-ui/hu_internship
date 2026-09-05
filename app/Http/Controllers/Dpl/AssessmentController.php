@@ -17,18 +17,42 @@ class AssessmentController extends Controller
         return DplAssignment::where('lecturer_id', $lecturer?->id)->pluck('internship_id');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $internshipIds = $this->getInternshipIds();
-        $internships = Internship::with(['student.user', 'vacancy.industry', 'dplAssessment'])
-            ->whereIn('id', $internshipIds)
-            ->get();
+        $query = Internship::with(['student.user', 'vacancy.industry', 'dplAssessment'])
+            ->whereIn('id', $internshipIds);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('student', function ($sq) use ($search) {
+                    $sq->where('nim', 'like', "%{$search}%")
+                       ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+                })->orWhereHas('vacancy.industry', function ($iq) use ($search) {
+                    $iq->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'assessed') {
+                $query->whereHas('assessments', fn($q) => $q->where('assessor_type', 'dpl'));
+            } elseif ($request->status === 'pending') {
+                $query->whereDoesntHave('assessments', fn($q) => $q->where('assessor_type', 'dpl'));
+            }
+        }
+
+        $internships = $query->paginate(15)->withQueryString();
 
         return view('dpl.assessment.index', compact('internships'));
     }
 
     public function store(Request $request, Internship $internship)
     {
+        $internshipIds = $this->getInternshipIds();
+        abort_unless($internshipIds->contains($internship->id), 403, 'Akses ditolak.');
+
         $validated = $request->validate([
             'report_score' => 'required|numeric|min:0|max:100',
             'presentation_score' => 'required|numeric|min:0|max:100',

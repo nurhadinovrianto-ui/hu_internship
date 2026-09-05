@@ -10,7 +10,7 @@ class Certificate extends Model
     use HasFactory;
 
     protected $fillable = [
-        'internship_id', 'student_id', 'certificate_number', 'file_path', 'issued_at', 'issued_by',
+        'internship_id', 'student_id', 'certificate_number', 'file_path', 'issuance_type', 'issued_at', 'issued_by',
     ];
 
     protected $casts = ['issued_at' => 'datetime'];

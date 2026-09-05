@@ -11,6 +11,9 @@ class AgreementController extends Controller
     public function index()
     {
         $student = auth()->user()->student;
+        if (!$student) {
+            return view('student.agreement.index', ['blocked' => true, 'reason' => 'Data mahasiswa tidak ditemukan.']);
+        }
         $internship = $student->internships()->whereIn('status', [Internship::STATUS_ACTIVE, Internship::STATUS_COMPLETED])->first();
 
         if (!$internship) {

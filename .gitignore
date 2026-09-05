@@ -25,3 +25,28 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Database backups and dumps
+*.bak
+*.sql
+
+# Archives and patches
+*.zip
+*.rar
+*.tar
+*.gz
+/test_unzip
+
+# Environment & credentials
+.env*
+!.env.example
+sftp.txt
+vps_log.txt
+
+# Scratch scripts & temporary notes
+/scratch
+routes.txt
+
+# Documents in root
+/*.docx
+/*.xlsx

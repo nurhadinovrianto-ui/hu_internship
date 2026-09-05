@@ -29,9 +29,8 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label" for="date">Tanggal Aktivitas</label>
-                            <input type="date" name="date" id="date" class="form-control" value="{{ $logbook->date->toDateString() }}" disabled>
-                            <small class="text-muted">Tanggal tidak dapat diubah.</small>
+                            <label class="form-label" for="date">Tanggal Aktivitas <span class="text-danger">*</span></label>
+                            <input type="date" name="date" id="date" class="form-control" max="{{ now()->toDateString() }}" value="{{ old('date', $logbook->date->toDateString()) }}" required>
                         </div>
                         
                         <div class="col-md-6 mb-3">

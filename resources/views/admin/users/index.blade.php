@@ -34,12 +34,15 @@
             </div>
             <div class="card-body">
                 <!-- Filter & Search -->
-                <form action="{{ route('admin.users.index') }}" method="GET" class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <input type="text" name="search" class="form-control" placeholder="Cari nama atau email..." value="{{ request('search') }}">
-                    </div>
+                <form action="{{ route('admin.users.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
                     <div class="col-md-4">
-                        <select name="role" class="form-control">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama atau email..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="role" class="form-control form-select">
                             <option value="">Semua Peran / Role</option>
                             @foreach($roles as $role)
                                 <option value="{{ $role->name }}" {{ request('role') === $role->name ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
@@ -47,7 +50,21 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-primary btn-block">Filter</button>
+                        <select name="status" class="form-control form-select">
+                            <option value="">Semua Status</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'role', 'status']))
+                            <a href="{{ route('admin.users.index') }}" class="btn btn-light" title="Reset Filter">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
                     </div>
                 </form>
 
@@ -84,6 +101,13 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2">
+                                            <!-- Impersonate -->
+                                            @if(auth()->user()->canImpersonate() && $usr->canBeImpersonated())
+                                                <a href="{{ route('impersonate', $usr->id) }}" class="btn btn-dark btn-xs" title="Login Sebagai User Ini">
+                                                    <i class="la la-user-secret"></i>
+                                                </a>
+                                            @endif
+                                            
                                             <!-- Toggle Status -->
                                             <form action="{{ route('admin.users.toggle-status', $usr->id) }}" method="POST">
                                                 @csrf
@@ -129,8 +153,13 @@
                     </table>
                 </div>
 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $users->links() }}
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }} pengguna
+                    </small>
+                    <div>
+                        {{ $users->links() }}
+                    </div>
                 </div>
             </div>
         </div>

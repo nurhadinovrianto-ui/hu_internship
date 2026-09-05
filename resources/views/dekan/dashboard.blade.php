@@ -18,6 +18,8 @@
     </div>
 </div>
 
+@include('shared.dashboard-period-filter')
+
 <div class="row">
     <!-- Stat Cards -->
     <div class="col-xl-3 col-xxl-3 col-sm-6">
@@ -28,8 +30,15 @@
                         <i class="la la-graduation-cap" style="font-size: 24px;"></i>
                     </span>
                     <div class="media-body text-white text-end">
-                        <p class="mb-1">Total Mahasiswa</p>
+                        <p class="mb-1">Mahasiswa Fakultas</p>
                         <h3 class="text-white">{{ $stats['total_students'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">
+                            @if($period)
+                                Periode Ini (Total: {{ $stats['all_students_count'] }})
+                            @else
+                                Seluruh Periode
+                            @endif
+                        </small>
                     </div>
                 </div>
             </div>
@@ -45,6 +54,9 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Magang Aktif</p>
                         <h3 class="text-white">{{ $stats['active_internships'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">
+                            {{ $period ? 'Pada Periode Ini' : 'Seluruh Periode' }}
+                        </small>
                     </div>
                 </div>
             </div>

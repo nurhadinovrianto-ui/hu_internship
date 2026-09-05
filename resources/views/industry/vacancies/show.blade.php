@@ -29,9 +29,14 @@
                         <h4 class="text-dark mb-1" style="font-weight: 700;">{{ $vacancy->title }}</h4>
                         <p class="text-muted mb-0">Divisi: {{ $vacancy->division ?? '-' }} &bull; Posisi: {{ $vacancy->position }}</p>
                     </div>
-                    <span class="badge {{ $vacancy->status_badge['class'] }} py-2 px-3">
-                        {{ $vacancy->status_badge['label'] }}
-                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge {{ $vacancy->status_badge['class'] }} py-2 px-3">
+                            {{ $vacancy->status_badge['label'] }}
+                        </span>
+                        <a href="{{ route('industry.vacancies.edit', $vacancy->id) }}" class="btn btn-primary btn-sm">
+                            <i class="la la-pencil me-1"></i> Edit Lowongan
+                        </a>
+                    </div>
                 </div>
 
                 <h5 class="text-dark mb-3" style="font-weight: 700;">Deskripsi Pekerjaan</h5>

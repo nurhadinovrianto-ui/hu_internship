@@ -214,7 +214,12 @@
     @yield('styles')
 </head>
 <body>
-
+    @impersonating
+        <div class="alert alert-warning text-center py-2 m-0 rounded-0 shadow-sm" style="position: relative; z-index: 99999; font-weight: 500;">
+            <i class="la la-user-secret fs-5 me-1 align-middle"></i> Anda sedang login sebagai <strong class="text-dark">{{ auth()->user()->name }}</strong>.
+            <a href="{{ route('impersonate.leave') }}" class="btn btn-dark btn-xs ms-3 rounded-pill px-3">Kembali ke Akun Asli</a>
+        </div>
+    @endImpersonating
     <!-- Preloader start -->
     <div id="preloader">
         <div class="sk-three-bounce">
@@ -277,16 +282,6 @@
                 <nav class="navbar navbar-expand">
                     <div class="collapse navbar-collapse justify-content-between">
                         <div class="header-left">
-                            <div class="search_bar dropdown">
-                                <span class="search_icon p-3 c-pointer" data-bs-toggle="dropdown">
-                                    <i class="mdi mdi-magnify"></i>
-                                </span>
-                                <div class="dropdown-menu p-0 m-0">
-                                    <form>
-                                        <input class="form-control" type="search" placeholder="Cari..." aria-label="Search">
-                                    </form>
-                                </div>
-                            </div>
                         </div>
 
                         <ul class="navbar-nav header-right">
@@ -394,7 +389,20 @@
                         <li>
                             <a href="{{ route('admin.industries.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-building"></i>
-                                <span class="nav-text">Mitra Industri</span>
+                                <span class="nav-text">Perusahaan Mitra</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.vacancies.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-briefcase"></i>
+                                <span class="nav-text">Lowongan Magang</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.tracking.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-map-marked-alt"></i>
+                                <span class="nav-text">Lacak Mahasiswa</span>
+                                <span class="badge badge-xs badge-success ms-1">Live</span>
                             </a>
                         </li>
                         <li>
@@ -449,6 +457,12 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('kaprodi.vacancies.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-briefcase"></i>
+                                <span class="nav-text">Kelola Lowongan</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('kaprodi.applications.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-file-signature"></i>
                                 <span class="nav-text">Validasi Akademik</span>
@@ -467,9 +481,34 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('kaprodi.self-proposals.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-file-import"></i>
+                                <span class="nav-text">Magang Mandiri</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('kaprodi.defenses.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-graduation-cap"></i>
+                                <span class="nav-text">Sidang Magang</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('kaprodi.tracking.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-map-marked-alt"></i>
+                                <span class="nav-text">Lacak Mahasiswa</span>
+                                <span class="badge badge-xs badge-success ms-2">Live</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('kaprodi.reports.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-file-alt"></i>
                                 <span class="nav-text">Laporan Akhir</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('kaprodi.surveys.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-poll"></i>
+                                <span class="nav-text">Analitik Kuesioner</span>
                             </a>
                         </li>
                         <li>
@@ -494,9 +533,22 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('dekan.tracking.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-map-marked-alt"></i>
+                                <span class="nav-text">Lacak Mahasiswa</span>
+                                <span class="badge badge-xs badge-success ms-2">Live</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('dekan.industries') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-briefcase"></i>
                                 <span class="nav-text">Kerjasama Industri</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('dekan.surveys.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-poll"></i>
+                                <span class="nav-text">Analitik Kuesioner</span>
                             </a>
                         </li>
 
@@ -512,6 +564,18 @@
                             <a href="{{ route('dpl.students') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-user-friends"></i>
                                 <span class="nav-text">Daftar Bimbingan</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('dpl.self-proposals.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-file-import"></i>
+                                <span class="nav-text">Usulan Magang Mandiri</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('dpl.vacancies.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-search-location"></i>
+                                <span class="nav-text">Cari Lowongan Magang</span>
                             </a>
                         </li>
                         <li>
@@ -533,15 +597,34 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('dpl.tracking.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-map-marked-alt"></i>
+                                <span class="nav-text">Lacak Bimbingan</span>
+                                <span class="badge badge-xs badge-success ms-2">Live</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('dpl.reports.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-file-upload"></i>
                                 <span class="nav-text">Laporan Akhir</span>
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('dpl.defenses.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-graduation-cap"></i>
+                                <span class="nav-text">Sidang Magang</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('dpl.assessment.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-star"></i>
                                 <span class="nav-text">Penilaian Akhir</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('profile') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-user-circle"></i>
+                                <span class="nav-text">Profil & Kepakaran DPL</span>
                             </a>
                         </li>
 
@@ -584,6 +667,13 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('industry.tracking.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-map-marked-alt"></i>
+                                <span class="nav-text">Lacak Mahasiswa</span>
+                                <span class="badge badge-xs badge-success ms-2">Live</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('industry.reports.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-file-alt"></i>
                                 <span class="nav-text">Laporan Akhir</span>
@@ -623,6 +713,12 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('student.self-proposals.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-file-import"></i>
+                                <span class="nav-text">Magang Mandiri</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('student.applications.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-history"></i>
                                 <span class="nav-text">Lamaran Saya</span>
@@ -653,9 +749,21 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('student.defense.index') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-graduation-cap"></i>
+                                <span class="nav-text">Sidang Magang</span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('student.agreement.index') }}" class="ai-icon" aria-expanded="false">
                                 <i class="la la-handshake"></i>
                                 <span class="nav-text">Internship Agreement</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('profile') }}" class="ai-icon" aria-expanded="false">
+                                <i class="la la-id-card"></i>
+                                <span class="nav-text">Profil & CV Saya</span>
                             </a>
                         </li>
                         @php
@@ -1014,5 +1122,7 @@
             setTimeout(checkNotifications, 2000);
         })();
     </script>
+
+    @include('student.partials.live-tracker')
 </body>
 </html>

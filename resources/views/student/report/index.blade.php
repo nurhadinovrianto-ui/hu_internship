@@ -86,6 +86,12 @@
                                         <input type="text" name="title" id="title_dpl" class="form-control" placeholder="Contoh: Laporan Kerja Praktik di PT..." value="{{ old('title', $dplReport?->title) }}" required>
                                     </div>
 
+                                    <div class="form-group mb-3">
+                                        <label class="form-label" for="submitted_at_dpl">Tanggal Pengajuan Laporan (Bisa Backdate)</label>
+                                        <input type="date" name="submitted_at" id="submitted_at_dpl" class="form-control" max="{{ date('Y-m-d') }}" value="{{ old('submitted_at', date('Y-m-d')) }}">
+                                        <small class="text-muted">Sesuaikan jika laporan ini diserahkan pada tanggal sebelumnya (backdate).</small>
+                                    </div>
+
                                     <div class="form-group mb-4">
                                         <label class="form-label" for="report_file_dpl">File Laporan Kampus (Format PDF) <span class="text-danger">*</span></label>
                                         <input type="file" name="report_file" id="report_file_dpl" class="form-control" accept=".pdf" required>
@@ -185,6 +191,12 @@
                                     <div class="form-group mb-3">
                                         <label class="form-label" for="title_industry">Judul Proyek / Pembuatan Software <span class="text-danger">*</span></label>
                                         <input type="text" name="title" id="title_industry" class="form-control" placeholder="Contoh: Pembuatan Sistem Aplikasi KMS..." value="{{ old('title', $industryReport?->title) }}" required>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label" for="submitted_at_industry">Tanggal Pengajuan Laporan (Bisa Backdate)</label>
+                                        <input type="date" name="submitted_at" id="submitted_at_industry" class="form-control" max="{{ date('Y-m-d') }}" value="{{ old('submitted_at', date('Y-m-d')) }}">
+                                        <small class="text-muted">Sesuaikan jika laporan proyek ini diserahkan pada tanggal sebelumnya (backdate).</small>
                                     </div>
 
                                     <div class="form-group mb-4">

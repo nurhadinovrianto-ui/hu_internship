@@ -169,7 +169,7 @@
             NIM: <strong>{{ $student->nim }}</strong> &bull; Program Studi: <strong>{{ $student->studyProgram->name }}</strong><br>
             yang telah sukses menyelesaikan Program Magang Industri (Campus-Industry Collaboration) di:<br>
             <strong>{{ $internship->vacancy->industry->name }}</strong><br>
-            selama {{ $internship->vacancy->duration_months }} bulan dengan predikat nilai mutu final: <strong>{{ $conversion->letter_grade }}</strong>.
+            selama {{ $internship->vacancy->duration }} dengan predikat nilai mutu final: <strong>{{ $conversion->letter_grade }}</strong>.
         </div>
 
         <div class="signatures">

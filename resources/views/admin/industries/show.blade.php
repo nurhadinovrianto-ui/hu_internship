@@ -113,7 +113,15 @@
                                     <small class="text-muted">{{ $sup->user->email }}</small>
                                 </div>
                             </div>
-                            <span class="badge badge-info text-white px-3 py-1">{{ $sup->position ?? 'Supervisor' }} &bull; {{ $sup->division ?? 'Divisi' }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge badge-info text-white px-3 py-1">{{ $sup->position ?? 'Supervisor' }} &bull; {{ $sup->division ?? 'Divisi' }}</span>
+                                
+                                @if(auth()->user()->canImpersonate() && $sup->user->canBeImpersonated())
+                                    <a href="{{ route('impersonate', $sup->user->id) }}" class="btn btn-dark btn-sm" title="Login Sebagai Supervisor Ini">
+                                        <i class="la la-user-secret me-1"></i> Login Sbg Akun Ini
+                                    </a>
+                                @endif
+                            </div>
                         </li>
                     @empty
                         <li class="list-group-item text-center text-muted px-0">Belum ada supervisor industri yang didaftarkan.</li>

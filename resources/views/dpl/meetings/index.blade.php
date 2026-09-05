@@ -24,6 +24,35 @@
                     <a href="{{ route('dpl.meetings.create') }}" class="btn btn-primary">+ Buat Meeting Baru</a>
                 </div>
                 <div class="card-body">
+                    <!-- Search & Filter -->
+                    <form action="{{ route('dpl.meetings.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                                <input type="text" name="search" class="form-control border-start-0" placeholder="Cari topik meeting atau mahasiswa..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="status" class="form-control form-select">
+                                <option value="">Semua Status</option>
+                                <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>Terjadwal</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Sedang Berlangsung</option>
+                                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
+                                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="la la-filter me-1"></i> Filter
+                            </button>
+                            @if(request()->anyFilled(['search', 'status']))
+                                <a href="{{ route('dpl.meetings.index') }}" class="btn btn-light" title="Reset">
+                                    <i class="la la-undo"></i>
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+
                     <div class="table-responsive">
                         <table class="table table-responsive-md">
                             <thead>
@@ -77,6 +106,15 @@
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <small class="text-muted">
+                            Menampilkan {{ $meetings->firstItem() ?? 0 }} - {{ $meetings->lastItem() ?? 0 }} dari {{ $meetings->total() }} meeting
+                        </small>
+                        <div>
+                            {{ $meetings->links() }}
+                        </div>
                     </div>
                 </div>
             </div>

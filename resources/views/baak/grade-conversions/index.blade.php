@@ -27,6 +27,41 @@
     <div class="col-12">
         <div class="card shadow-sm border-0">
             <div class="card-body">
+                <!-- Filter & Search -->
+                <form action="{{ route('baak.grade-conversions.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama mahasiswa, NIM, atau industri..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="study_program_id" class="form-control form-select">
+                            <option value="">Semua Program Studi</option>
+                            @foreach($studyPrograms as $prodi)
+                                <option value="{{ $prodi->id }}" {{ request('study_program_id') == $prodi->id ? 'selected' : '' }}>{{ $prodi->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="status" class="form-control form-select">
+                            <option value="">Semua Status</option>
+                            <option value="converted" {{ request('status') === 'converted' ? 'selected' : '' }}>Sudah Dikonversi</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Belum Dikonversi</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'study_program_id', 'status']))
+                            <a href="{{ route('baak.grade-conversions.index') }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
                         <thead>
@@ -122,6 +157,15 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $internships->firstItem() ?? 0 }} - {{ $internships->lastItem() ?? 0 }} dari {{ $internships->total() }} magang selesai
+                    </small>
+                    <div>
+                        {{ $internships->links() }}
+                    </div>
                 </div>
             </div>
         </div>

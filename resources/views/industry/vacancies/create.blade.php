@@ -62,8 +62,8 @@
                             <input type="text" name="location" id="location" class="form-control" placeholder="Contoh: Jakarta Pusat / Bandung" value="{{ old('location') }}">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label" for="duration_months">Durasi Magang (Bulan) <span class="text-danger">*</span></label>
-                            <input type="number" name="duration_months" id="duration_months" class="form-control" min="1" max="12" value="{{ old('duration_months', 3) }}" required>
+                            <label class="form-label" for="duration">Durasi Magang <span class="text-danger">*</span></label>
+                            <input type="text" name="duration" id="duration" class="form-control" placeholder="Contoh: 3 Bulan, 1 Semester..." value="{{ old('duration') }}" required>
                         </div>
                     </div>
 

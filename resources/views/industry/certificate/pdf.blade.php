@@ -177,12 +177,12 @@
                 <tr>
                     <td class="label-col">Name</td>
                     <td class="colon-col">:</td>
-                    <td>{{ $student->user->name }}</td>
+                    <td>{{ $student->user?->name ?? 'Mahasiswa' }}</td>
                 </tr>
                 <tr>
                     <td class="label-col">Student ID</td>
                     <td class="colon-col">:</td>
-                    <td>{{ $student->nim }}</td>
+                    <td>{{ $student->nim ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="label-col">University</td>
@@ -194,16 +194,17 @@
             @php
                 $startDateFmt = $internship->start_date ? \Carbon\Carbon::parse($internship->start_date)->format('jS F Y') : '2nd May 2026';
                 $endDateFmt = $internship->end_date ? \Carbon\Carbon::parse($internship->end_date)->format('jS F Y') : '16th October 2026';
-                $deptName = $internship->vacancy->division ?: ($internship->vacancy->department ?: $internship->vacancy->industry->name);
+                $deptName = $internship->vacancy?->division ?: ($internship->vacancy?->department ?: ($internship->vacancy?->industry?->name ?? 'Perusahaan'));
+                $vacTitle = $internship->vacancy?->title ?: ($internship->vacancy?->position ?: 'Intern');
             @endphp
 
             <div class="paragraph-text">
-                Has accomplished the internship as a {{ $internship->vacancy->title }} in the {{ $deptName }}, from {{ $startDateFmt }} to {{ $endDateFmt }}, with the duties and responsibilities as follows:
+                Has accomplished the internship as a {{ $vacTitle }} in the {{ $deptName }}, from {{ $startDateFmt }} to {{ $endDateFmt }}, with the duties and responsibilities as follows:
             </div>
 
             <ol class="duties-list">
-                <li>Executing interactive workflows and technical responsibilities related to {{ $internship->vacancy->title }}, collaborating effectively with the team to ensure cohesive outcomes.</li>
-                <li>Participating actively in departmental initiatives, problem-solving workflows, and professional communication within {{ $internship->vacancy->industry->name }}.</li>
+                <li>Executing interactive workflows and technical responsibilities related to {{ $vacTitle }}, collaborating effectively with the team to ensure cohesive outcomes.</li>
+                <li>Participating actively in departmental initiatives, problem-solving workflows, and professional communication within {{ $internship->vacancy?->industry?->name ?? 'Perusahaan' }}.</li>
                 <li>Demonstrating commendable discipline, analytical capabilities, and professional work ethic throughout the internship period.</li>
             </ol>
 
@@ -213,7 +214,7 @@
 
             <!-- Karawang, 17th October 2023 (Persis Gambar) -->
             <div class="date-line">
-                {{ $internship->vacancy->industry->city ?? 'Karawang' }}, {{ $certificate->issued_at ? $certificate->issued_at->format('jS F Y') : now()->format('jS F Y') }}
+                {{ $internship->vacancy?->industry?->city ?? 'Karawang' }}, {{ $certificate->issued_at ? $certificate->issued_at->format('jS F Y') : now()->format('jS F Y') }}
             </div>
 
             <!-- Verification QR Code & Signature Block -->
@@ -239,7 +240,7 @@
                             @endif
                         </div>
                         <div class="sign-name">
-                            {{ $template?->signatory_name ?: ($internship->vacancy->industrySupervisor->user->name ?? 'HR Department') }}
+                            {{ $template?->signatory_name ?: ($internship->vacancy?->supervisor?->user?->name ?? 'HR Department') }}
                         </div>
                         <div class="sign-role">
                             {{ $template?->signatory_position ?: 'Industry Supervisor / HRD' }}

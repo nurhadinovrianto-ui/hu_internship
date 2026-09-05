@@ -50,28 +50,28 @@
                                 <tbody>
                                     <tr>
                                         <th class="ps-0 py-2 text-muted" style="width: 40%;">Nama Mahasiswa</th>
-                                        <td class="pe-0 py-2 text-dark font-weight-bold">{{ $certificate->student->user->name }}</td>
+                                        <td class="pe-0 py-2 text-dark font-weight-bold">{{ $certificate->student?->user?->name ?? 'Mahasiswa' }}</td>
                                     </tr>
                                     <tr>
                                         <th class="ps-0 py-2 text-muted">NIM</th>
-                                        <td class="pe-0 py-2 text-dark">{{ $certificate->student->nim }}</td>
+                                        <td class="pe-0 py-2 text-dark">{{ $certificate->student?->nim ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th class="ps-0 py-2 text-muted">Program Studi</th>
-                                        <td class="pe-0 py-2 text-dark">{{ $certificate->student->studyProgram->name }}</td>
+                                        <td class="pe-0 py-2 text-dark">{{ $certificate->student?->studyProgram?->name ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th class="ps-0 py-2 text-muted">Tempat Magang</th>
-                                        <td class="pe-0 py-2 text-dark">{{ $certificate->internship->vacancy->industry->name }}</td>
+                                        <td class="pe-0 py-2 text-dark">{{ $certificate->internship?->vacancy?->industry?->name ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th class="ps-0 py-2 text-muted">Durasi Program</th>
-                                        <td class="pe-0 py-2 text-dark">{{ $certificate->internship->vacancy->duration_months }} Bulan</td>
+                                        <td class="pe-0 py-2 text-dark">{{ $certificate->internship?->vacancy?->duration ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th class="ps-0 py-2 text-muted border-top pt-3">Predikat Akhir</th>
                                         <td class="pe-0 py-2 border-top pt-3">
-                                            <span class="badge bg-primary px-3 py-2" style="font-size: 16px;">{{ $conversion->letter_grade }}</span>
+                                            <span class="badge bg-primary px-3 py-2" style="font-size: 16px;">{{ $conversion->letter_grade ?? 'A' }}</span>
                                         </td>
                                     </tr>
                                 </tbody>

@@ -39,15 +39,26 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body py-4">
-                    <form action="{{ route('student.vacancies.browse') }}" method="GET" class="row g-3">
-                        <div class="col-md-10">
+                    <form action="{{ route('student.vacancies.browse') }}" method="GET" class="row g-3 align-items-center">
+                        <div class="col-md-6">
                             <div class="input-group">
                                 <span class="input-group-text bg-white" style="border-right: none;"><i class="la la-search text-muted"></i></span>
                                 <input type="text" name="search" class="form-control ps-0" placeholder="Cari posisi magang, bidang atau nama perusahaan mitra..." value="{{ request('search') }}" style="border-left: none;">
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-block">Cari Lowongan</button>
+                        <div class="col-md-3">
+                            <select name="work_type" class="form-control" onchange="this.form.submit()">
+                                <option value="">Semua Tipe Kerja</option>
+                                <option value="onsite" {{ request('work_type') === 'onsite' ? 'selected' : '' }}>Onsite</option>
+                                <option value="remote" {{ request('work_type') === 'remote' ? 'selected' : '' }}>Remote</option>
+                                <option value="hybrid" {{ request('work_type') === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="la la-filter me-1"></i> Filter</button>
+                            @if(request()->hasAny(['search', 'work_type']))
+                                <a href="{{ route('student.vacancies.browse') }}" class="btn btn-light" title="Reset"><i class="la la-undo"></i></a>
+                            @endif
                         </div>
                     </form>
                 </div>
@@ -79,7 +90,7 @@
                                 <i class="la la-map-marker-alt me-1"></i> {{ $vac->work_type_label }} ({{ $vac->location ?? 'Remote' }})
                             </span>
                             <span class="badge badge-outline-info" style="font-size: 11px;">
-                                <i class="la la-hourglass-half me-1"></i> {{ $vac->duration_months }} Bulan
+                                <i class="la la-hourglass-half me-1"></i> {{ $vac->duration }}
                             </span>
                             <span class="badge badge-outline-success" style="font-size: 11px;">
                                 <i class="la la-user-friends me-1"></i> Sisa Kuota: {{ $vac->remaining_quota }}
@@ -107,10 +118,13 @@
     </div>
 
     <!-- Pagination -->
-    <div class="row">
-        <div class="col-12 mt-3 d-flex justify-content-center">
-            {{ $vacancies->links() }}
+    @if($vacancies->hasPages() || $vacancies->total() > 0)
+        <div class="row">
+            <div class="col-12 mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <small class="text-muted">Menampilkan {{ $vacancies->firstItem() ?? 0 }} - {{ $vacancies->lastItem() ?? 0 }} dari {{ $vacancies->total() }} data</small>
+                {{ $vacancies->links() }}
+            </div>
         </div>
-    </div>
+    @endif
 @endif
 @endsection

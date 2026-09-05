@@ -53,7 +53,29 @@
     <div class="col-xl-8 col-lg-8">
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
-                <h5 class="text-dark mb-4" style="font-weight: 700;">Daftar Fakultas</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="text-dark mb-0" style="font-weight: 700;">Daftar Fakultas</h5>
+                </div>
+
+                <!-- Form Search -->
+                <form action="{{ route('admin.faculties.index') }}" method="GET" class="row g-2 mb-3">
+                    <div class="col-sm-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama, kode, atau dekan..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-sm-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="la la-search me-1"></i> Cari
+                        </button>
+                        @if(request()->filled('search'))
+                            <a href="{{ route('admin.faculties.index') }}" class="btn btn-light btn-sm" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
                 
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
@@ -92,6 +114,15 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $faculties->firstItem() ?? 0 }} - {{ $faculties->lastItem() ?? 0 }} dari {{ $faculties->total() }} fakultas
+                    </small>
+                    <div>
+                        {{ $faculties->links() }}
+                    </div>
                 </div>
             </div>
         </div>

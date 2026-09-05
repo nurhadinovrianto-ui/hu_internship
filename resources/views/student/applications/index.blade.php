@@ -22,6 +22,31 @@
     <div class="col-12">
         <div class="card shadow-sm border-0">
             <div class="card-body">
+                <form action="{{ url()->current() }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search"></i></span>
+                            <input type="text" name="search" class="form-control" placeholder="Cari posisi, judul atau perusahaan..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="status" class="form-control" onchange="this.form.submit()">
+                            <option value="">Semua Status Lamaran</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Review Kaprodi</option>
+                            <option value="kaprodi_approved" {{ request('status') === 'kaprodi_approved' ? 'selected' : '' }}>Disetujui Kaprodi (Menunggu Industri)</option>
+                            <option value="kaprodi_rejected" {{ request('status') === 'kaprodi_rejected' ? 'selected' : '' }}>Ditolak Kaprodi</option>
+                            <option value="industry_accepted" {{ request('status') === 'industry_accepted' ? 'selected' : '' }}>Diterima Industri</option>
+                            <option value="industry_rejected" {{ request('status') === 'industry_rejected' ? 'selected' : '' }}>Ditolak Industri</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1"><i class="la la-filter me-1"></i> Filter</button>
+                        @if(request()->hasAny(['search', 'status']))
+                            <a href="{{ url()->current() }}" class="btn btn-light" title="Reset"><i class="la la-undo"></i></a>
+                        @endif
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
                         <thead>
@@ -60,9 +85,12 @@
                     </table>
                 </div>
                 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $applications->links() }}
-                </div>
+                @if($applications->hasPages() || $applications->total() > 0)
+                    <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <small class="text-muted">Menampilkan {{ $applications->firstItem() ?? 0 }} - {{ $applications->lastItem() ?? 0 }} dari {{ $applications->total() }} data</small>
+                        {{ $applications->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>

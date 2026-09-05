@@ -61,13 +61,13 @@
         </table>
 
         <div style="margin-top: 30px; margin-bottom: 20px;">
-            <p>Yth. Pimpinan/HRD <strong>{{ $industry->name }}</strong><br>
+            <p>Yth. Pimpinan/HRD <strong>{{ $industry->name ?? 'Perusahaan' }}</strong><br>
             Di tempat</p>
         </div>
 
         <p>Dengan hormat,</p>
         <p style="text-align: justify;">
-            Sehubungan dengan pelaksanaan kurikulum wajib bagi mahasiswa Program Studi {{ $student->studyProgram->name }} Universitas Horizon Indonesia, kami bermaksud mengajukan permohonan izin agar mahasiswa kami dapat melaksanakan Praktik Kerja Lapangan (Magang) di instansi/perusahaan yang Bapak/Ibu pimpin.
+            Sehubungan dengan pelaksanaan kurikulum wajib bagi mahasiswa Program Studi {{ $student->studyProgram?->name ?? 'Program Studi' }} Universitas Horizon Indonesia, kami bermaksud mengajukan permohonan izin agar mahasiswa kami dapat melaksanakan Praktik Kerja Lapangan (Magang) di instansi/perusahaan yang Bapak/Ibu pimpin.
         </p>
         
         <p>Adapun mahasiswa yang bersangkutan adalah sebagai berikut:</p>
@@ -75,23 +75,23 @@
         <table class="student-table">
             <tr>
                 <th width="30%">Nama</th>
-                <td width="70%">{{ $student->user->name }}</td>
+                <td width="70%">{{ $student->user?->name ?? '-' }}</td>
             </tr>
             <tr>
                 <th>NIM</th>
-                <td>{{ $student->nim }}</td>
+                <td>{{ $student->nim ?? '-' }}</td>
             </tr>
             <tr>
                 <th>Program Studi</th>
-                <td>{{ $student->studyProgram->name }}</td>
+                <td>{{ $student->studyProgram?->name ?? '-' }}</td>
             </tr>
             <tr>
                 <th>Semester</th>
-                <td>{{ $student->current_semester }}</td>
+                <td>{{ $student->current_semester ?? '-' }}</td>
             </tr>
             <tr>
                 <th>Posisi Dilamar</th>
-                <td>{{ $application->vacancy->position }}</td>
+                <td>{{ $application->vacancy?->position ?? ($application->vacancy?->title ?? '-') }}</td>
             </tr>
         </table>
 

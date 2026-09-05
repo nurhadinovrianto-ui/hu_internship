@@ -18,6 +18,8 @@
     </div>
 </div>
 
+@include('shared.dashboard-period-filter')
+
 <div class="row">
     <!-- Stat Cards -->
     <div class="col-xl-3 col-xxl-3 col-sm-6">
@@ -30,6 +32,9 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Mahasiswa SKS Eligible</p>
                         <h3 class="text-white">{{ $stats['sks_eligible'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">
+                            {{ $period ? 'Periode Ini (Total Mhs: ' . $stats['total_students'] . ')' : 'Semua Periode' }}
+                        </small>
                     </div>
                 </div>
             </div>

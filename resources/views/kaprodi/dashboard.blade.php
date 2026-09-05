@@ -18,6 +18,8 @@
     </div>
 </div>
 
+@include('shared.dashboard-period-filter')
+
 <div class="row">
     <!-- Stat Cards -->
     <div class="col-xl-3 col-xxl-3 col-sm-6">
@@ -30,6 +32,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Validasi Pending</p>
                         <h3 class="text-white">{{ $stats['pending_applications'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">{{ $period ? 'Periode Ini' : 'Semua Periode' }}</small>
                     </div>
                 </div>
             </div>
@@ -45,6 +48,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Plotting DPL Pending</p>
                         <h3 class="text-white">{{ $stats['waiting_dpl'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">{{ $period ? 'Periode Ini' : 'Semua Periode' }}</small>
                     </div>
                 </div>
             </div>
@@ -60,6 +64,9 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Magang Berjalan</p>
                         <h3 class="text-white">{{ $stats['active_internships'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">
+                            {{ $period ? 'Mhs Magang: ' . $stats['total_students'] . ' (Total: ' . $stats['all_students_count'] . ')' : 'Semua Periode' }}
+                        </small>
                     </div>
                 </div>
             </div>
@@ -73,8 +80,9 @@
                         <i class="la la-chalkboard-teacher" style="font-size: 24px;"></i>
                     </span>
                     <div class="media-body text-white text-end">
-                        <p class="mb-1">DPL Aktif</p>
+                        <p class="mb-1">DPL Tersedia</p>
                         <h3 class="text-white">{{ $stats['available_dpl'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">Kapasitas Aktif</small>
                     </div>
                 </div>
             </div>

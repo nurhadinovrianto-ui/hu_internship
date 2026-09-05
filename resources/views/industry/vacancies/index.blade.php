@@ -28,6 +28,42 @@
                 </a>
             </div>
             <div class="card-body">
+                <!-- Search & Filters -->
+                <form action="{{ route('industry.vacancies.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari posisi pekerjaan atau divisi..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="work_type" class="form-control form-select">
+                            <option value="">Semua Tipe Kerja</option>
+                            <option value="onsite" {{ request('work_type') === 'onsite' ? 'selected' : '' }}>Onsite</option>
+                            <option value="remote" {{ request('work_type') === 'remote' ? 'selected' : '' }}>Remote</option>
+                            <option value="hybrid" {{ request('work_type') === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="status" class="form-control form-select">
+                            <option value="">Semua Status</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Dibuka</option>
+                            <option value="closed" {{ request('status') === 'closed' ? 'selected' : '' }}>Ditutup</option>
+                            <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'work_type', 'status']))
+                            <a href="{{ route('industry.vacancies.index') }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
                         <thead>
@@ -70,8 +106,13 @@
                                             </form>
 
                                             <!-- Show detail -->
-                                            <a href="{{ route('industry.vacancies.show', $vac->id) }}" class="btn btn-info btn-xs" title="Lihat Detail &amp; Edit">
+                                            <a href="{{ route('industry.vacancies.show', $vac->id) }}" class="btn btn-info btn-xs" title="Lihat Detail">
                                                 <i class="la la-eye"></i>
+                                            </a>
+
+                                            <!-- Edit -->
+                                            <a href="{{ route('industry.vacancies.edit', $vac->id) }}" class="btn btn-primary btn-xs" title="Edit Lowongan">
+                                                <i class="la la-pencil"></i>
                                             </a>
 
                                             <!-- Delete -->
@@ -94,8 +135,13 @@
                     </table>
                 </div>
 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $vacancies->links() }}
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $vacancies->firstItem() ?? 0 }} - {{ $vacancies->lastItem() ?? 0 }} dari {{ $vacancies->total() }} lowongan
+                    </small>
+                    <div>
+                        {{ $vacancies->links() }}
+                    </div>
                 </div>
             </div>
         </div>

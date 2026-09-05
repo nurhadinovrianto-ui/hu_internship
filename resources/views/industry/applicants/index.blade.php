@@ -23,6 +23,26 @@
     <div class="col-12">
         <div class="card shadow-sm border-0">
             <div class="card-body">
+                <!-- Search Filter -->
+                <form action="{{ route('industry.applicants.index', $vacancyId) }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-9">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama pelamar, NIM, atau program studi..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-search me-1"></i> Cari
+                        </button>
+                        @if(request()->filled('search'))
+                            <a href="{{ route('industry.applicants.index', $vacancyId) }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
                         <thead>
@@ -94,8 +114,13 @@
                     </table>
                 </div>
 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $applicants->links() }}
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $applicants->firstItem() ?? 0 }} - {{ $applicants->lastItem() ?? 0 }} dari {{ $applicants->total() }} pelamar
+                    </small>
+                    <div>
+                        {{ $applicants->links() }}
+                    </div>
                 </div>
             </div>
         </div>

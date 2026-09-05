@@ -18,6 +18,8 @@
     </div>
 </div>
 
+@include('shared.dashboard-period-filter')
+
 <div class="row">
     <!-- Stat Cards -->
     <div class="col-xl-3 col-xxl-3 col-sm-6">
@@ -30,6 +32,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Total Pengguna</p>
                         <h3 class="text-white">{{ $stats['total_users'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">Akun SIMANG Aktif</small>
                     </div>
                 </div>
             </div>
@@ -43,8 +46,15 @@
                         <i class="la la-user-graduate" style="font-size: 24px;"></i>
                     </span>
                     <div class="media-body text-white text-end">
-                        <p class="mb-1">Total Mahasiswa</p>
+                        <p class="mb-1">Mahasiswa Periode</p>
                         <h3 class="text-white">{{ $stats['total_students'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">
+                            @if($period)
+                                Terdaftar di periode ini (Total: {{ $stats['all_students_count'] }})
+                            @else
+                                Seluruh Mahasiswa Kampus
+                            @endif
+                        </small>
                     </div>
                 </div>
             </div>
@@ -60,6 +70,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Mitra Industri</p>
                         <h3 class="text-white">{{ $stats['total_industries'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">Mitra Aktif Terdaftar</small>
                     </div>
                 </div>
             </div>
@@ -75,6 +86,9 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Magang Aktif</p>
                         <h3 class="text-white">{{ $stats['active_internships'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">
+                            {{ $period ? 'Pada Periode Ini' : 'Seluruh Periode' }}
+                        </small>
                     </div>
                 </div>
             </div>

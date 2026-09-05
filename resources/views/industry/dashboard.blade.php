@@ -18,6 +18,8 @@
     </div>
 </div>
 
+@include('shared.dashboard-period-filter')
+
 <div class="row">
     <!-- Stat Cards -->
     <div class="col-xl-4 col-xxl-4 col-sm-4">
@@ -30,6 +32,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Total Lowongan</p>
                         <h3 class="text-white">{{ $stats['total_vacancies'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">{{ $period ? 'Periode Ini' : 'Semua Periode' }}</small>
                     </div>
                 </div>
             </div>
@@ -45,6 +48,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Kandidat Menunggu Seleksi</p>
                         <h3 class="text-white">{{ $stats['pending_applicants'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">{{ $period ? 'Periode Ini' : 'Semua Periode' }}</small>
                     </div>
                 </div>
             </div>
@@ -60,6 +64,7 @@
                     <div class="media-body text-white text-end">
                         <p class="mb-1">Mahasiswa Magang Aktif</p>
                         <h3 class="text-white">{{ $stats['active_interns'] }}</h3>
+                        <small class="text-white opacity-75" style="font-size: 11px;">{{ $period ? 'Periode Ini' : 'Semua Periode' }}</small>
                     </div>
                 </div>
             </div>

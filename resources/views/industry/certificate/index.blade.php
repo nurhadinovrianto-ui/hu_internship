@@ -24,17 +24,25 @@
             <div class="card-body p-4">
                 <form action="{{ route('industry.certificates.index') }}" method="GET">
                     <div class="row g-3 align-items-end">
-                        <div class="col-lg-10 col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label font-weight-bold">Cari Mahasiswa / NIM</label>
                             <input type="text" name="search" class="form-control" placeholder="Nama atau NIM mahasiswa magang..." value="{{ request('search') }}">
                         </div>
-                        <div class="col-lg-2 col-md-4 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary font-weight-bold w-100">
-                                <i class="la la-search me-1"></i> Cari
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold">Status Sertifikat</label>
+                            <select name="cert_status" class="form-control" onchange="this.form.submit()">
+                                <option value="">Semua Status Sertifikat</option>
+                                <option value="issued" {{ request('cert_status') === 'issued' ? 'selected' : '' }}>Sudah Diterbitkan</option>
+                                <option value="pending" {{ request('cert_status') === 'pending' ? 'selected' : '' }}>Belum Diterbitkan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary font-weight-bold flex-grow-1">
+                                <i class="la la-filter me-1"></i> Filter
                             </button>
-                            @if(request('search'))
-                                <a href="{{ route('industry.certificates.index') }}" class="btn btn-outline-secondary">
-                                    <i class="la la-refresh"></i>
+                            @if(request()->hasAny(['search', 'cert_status']))
+                                <a href="{{ route('industry.certificates.index') }}" class="btn btn-light" title="Reset">
+                                    <i class="la la-undo"></i>
                                 </a>
                             @endif
                         </div>
@@ -181,8 +189,9 @@
                     </table>
                 </div>
 
-                @if($internships->hasPages())
-                    <div class="mt-4 pt-3 border-top">
+                @if($internships->hasPages() || $internships->total() > 0)
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <small class="text-muted">Menampilkan {{ $internships->firstItem() ?? 0 }} - {{ $internships->lastItem() ?? 0 }} dari {{ $internships->total() }} data</small>
                         {{ $internships->links() }}
                     </div>
                 @endif

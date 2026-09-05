@@ -21,16 +21,42 @@
 <div class="row">
     <div class="col-12">
         <div class="card shadow-sm border-0">
+            <div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap">
+                <h4 class="card-title">Daftar Presensi Mahasiswa</h4>
+                <a href="{{ route('dpl.tracking.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="la la-map-marked-alt me-1"></i> Lacak Mahasiswa Realtime
+                </a>
+            </div>
             <div class="card-body">
-                <form action="{{ route('dpl.attendance.index') }}" method="GET" class="row g-3 mb-4">
-                    <div class="col-md-5">
-                        <input type="text" name="search" class="form-control" placeholder="Cari nama mahasiswa..." value="{{ request('search') }}">
-                    </div>
+                <!-- Filter & Search -->
+                <form action="{{ route('dpl.attendance.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
                     <div class="col-md-4">
-                        <input type="date" name="date" class="form-control" value="{{ request('date') }}">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama atau NIM..." value="{{ request('search') }}">
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary btn-block">Filter</button>
+                        <input type="date" name="date" class="form-control" value="{{ request('date') }}" title="Filter Tanggal">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="status" class="form-control form-select">
+                            <option value="">Semua Status Kehadiran</option>
+                            <option value="present" {{ request('status') === 'present' ? 'selected' : '' }}>Hadir</option>
+                            <option value="sick" {{ request('status') === 'sick' ? 'selected' : '' }}>Sakit</option>
+                            <option value="permission" {{ request('status') === 'permission' ? 'selected' : '' }}>Izin</option>
+                            <option value="absent" {{ request('status') === 'absent' ? 'selected' : '' }}>Tidak Hadir (Alpa)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'date', 'status', 'approval_status']))
+                            <a href="{{ route('dpl.attendance.index') }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
                     </div>
                 </form>
 
@@ -51,16 +77,20 @@
                                 <tr>
                                     <td>{{ \Carbon\Carbon::parse($att->date)->format('d M Y') }}</td>
                                     <td>
-                                        <h6 class="mb-0">{{ $att->student->user->name }}</h6>
-                                        <small class="text-muted">{{ $att->internship->vacancy->industry->name }}</small>
+                                        <h6 class="mb-0 text-dark font-weight-bold">{{ $att->student->user->name }}</h6>
+                                        <small class="text-muted">NIM: {{ $att->student->nim }} &bull; {{ $att->internship->vacancy->industry->name }}</small>
                                     </td>
-                                    <td>{{ $att->check_in_time }}</td>
+                                    <td>{{ $att->check_in_time ?? '-' }}</td>
                                     <td>{{ $att->check_out_time ?? '-' }}</td>
                                     <td>
-                                        <span class="badge bg-success">Hadir</span>
+                                        <span class="badge {{ str_replace('badge-', 'bg-', $att->status_badge['class']) }} text-white">
+                                            {{ $att->status_badge['label'] }}
+                                        </span>
                                     </td>
                                     <td>
-                                        <a href="{{ route('dpl.attendance.show', $att->id) }}" class="btn btn-info btn-sm text-white">Lihat Peta & Foto</a>
+                                        <a href="{{ route('dpl.attendance.show', $att->id) }}" class="btn btn-info btn-sm text-white">
+                                            <i class="la la-eye me-1"></i> Detail
+                                        </a>
                                     </td>
                                 </tr>
                             @empty
@@ -72,8 +102,13 @@
                     </table>
                 </div>
 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $attendances->links() }}
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $attendances->firstItem() ?? 0 }} - {{ $attendances->lastItem() ?? 0 }} dari {{ $attendances->total() }} presensi
+                    </small>
+                    <div>
+                        {{ $attendances->links() }}
+                    </div>
                 </div>
             </div>
         </div>

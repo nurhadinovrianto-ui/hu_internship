@@ -21,7 +21,7 @@
 <div class="row">
     <div class="col-12">
         <!-- Card 1: Filter Pencarian -->
-        <div class="card-body bg-white mb-3 p-0 shadow-sm border rounded">
+        <div class="card mb-4">
             <div class="card-header pb-0">
                 <h4 class="card-title mb-1">Filter Pencarian</h4>
             </div>

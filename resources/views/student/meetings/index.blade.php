@@ -23,6 +23,30 @@
                     <h4 class="card-title">Meeting Saya</h4>
                 </div>
                 <div class="card-body">
+                    <form action="{{ url()->current() }}" method="GET" class="row g-2 mb-4 align-items-center">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="la la-search"></i></span>
+                                <input type="text" name="search" class="form-control" placeholder="Cari topik atau nama dosen/pembimbing..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="status" class="form-control" onchange="this.form.submit()">
+                                <option value="">Semua Status Meeting</option>
+                                <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>Terjadwal</option>
+                                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Sedang Berlangsung</option>
+                                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
+                                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="la la-filter me-1"></i> Filter</button>
+                            @if(request()->hasAny(['search', 'status']))
+                                <a href="{{ url()->current() }}" class="btn btn-light" title="Reset"><i class="la la-undo"></i></a>
+                            @endif
+                        </div>
+                    </form>
+
                     <div class="table-responsive">
                         <table class="table table-responsive-md">
                             <thead>
@@ -65,6 +89,13 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if(method_exists($meetings, 'hasPages') && ($meetings->hasPages() || $meetings->total() > 0))
+                        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                            <small class="text-muted">Menampilkan {{ $meetings->firstItem() ?? 0 }} - {{ $meetings->lastItem() ?? 0 }} dari {{ $meetings->total() }} data</small>
+                            {{ $meetings->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

@@ -36,16 +36,20 @@
 @else
     <div class="row">
         <div class="col-12">
-            <div class="card-body bg-white mb-3 p-0 shadow-sm border rounded">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body py-3">
                     <form action="{{ route('student.logbooks.index') }}" method="GET" class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label mb-1 text-dark" style="font-size: 13px;">Cari Aktivitas / Judul</label>
+                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari judul atau isi jurnal..." value="{{ request('search') }}">
+                        </div>
                         <div class="col-md-3">
                             <label class="form-label mb-1 text-dark" style="font-size: 13px;">Filter Bulan</label>
                             <input type="month" name="month" class="form-control form-control-sm" value="{{ request('month') }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label mb-1 text-dark" style="font-size: 13px;">Filter Status Review</label>
-                            <select name="status" class="form-control form-control-sm">
+                            <select name="status" class="form-control form-control-sm" onchange="this.form.submit()">
                                 <option value="">-- Semua Status --</option>
                                 <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Terkirim / Menunggu</option>
                                 <option value="reviewed_dpl" {{ request('status') == 'reviewed_dpl' ? 'selected' : '' }}>Direview DPL</option>
@@ -53,12 +57,12 @@
                                 <option value="revision_required" {{ request('status') == 'revision_required' ? 'selected' : '' }}>Perlu Revisi</option>
                             </select>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end mt-4">
-                            <button type="submit" class="btn btn-primary btn-sm me-2 px-3">
+                        <div class="col-md-2 d-flex align-items-end mt-4 gap-1">
+                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
                                 <i class="la la-filter me-1"></i> Filter
                             </button>
-                            @if(request('month') || request('status'))
-                                <a href="{{ route('student.logbooks.index') }}" class="btn btn-light btn-sm px-3">Reset</a>
+                            @if(request()->hasAny(['search', 'month', 'status']))
+                                <a href="{{ route('student.logbooks.index') }}" class="btn btn-light btn-sm" title="Reset"><i class="la la-undo"></i></a>
                             @endif
                         </div>
                     </form>
@@ -133,9 +137,12 @@
                         </table>
                     </div>
 
-                    <div class="mt-4 d-flex justify-content-center">
-                        {{ $logbooks->links() }}
-                    </div>
+                    @if($logbooks->hasPages() || $logbooks->total() > 0)
+                        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <small class="text-muted">Menampilkan {{ $logbooks->firstItem() ?? 0 }} - {{ $logbooks->lastItem() ?? 0 }} dari {{ $logbooks->total() }} data</small>
+                            {{ $logbooks->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

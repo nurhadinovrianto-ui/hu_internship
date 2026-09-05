@@ -22,6 +22,34 @@
     <div class="col-12">
         <div class="card shadow-sm border-0" style="border-radius: 12px;">
             <div class="card-body">
+                <!-- Search & Filters -->
+                <form action="{{ route('dpl.reports.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari judul, mahasiswa, NIM, industri..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="status" class="form-control form-select">
+                            <option value="">Semua Status Review</option>
+                            <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Menunggu Review</option>
+                            <option value="revision" {{ request('status') === 'revision' ? 'selected' : '' }}>Perlu Revisi</option>
+                            <option value="dpl_approved" {{ request('status') === 'dpl_approved' ? 'selected' : '' }}>Disetujui DPL</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'status']))
+                            <a href="{{ route('dpl.reports.index') }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
                         <thead>
@@ -136,6 +164,15 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $reports->firstItem() ?? 0 }} - {{ $reports->lastItem() ?? 0 }} dari {{ $reports->total() }} laporan
+                    </small>
+                    <div>
+                        {{ $reports->links() }}
+                    </div>
                 </div>
             </div>
         </div>

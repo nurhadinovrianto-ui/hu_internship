@@ -22,6 +22,33 @@
     <div class="col-12">
         <div class="card shadow-sm border-0">
             <div class="card-body">
+                <!-- Search & Filters -->
+                <form action="{{ route('dpl.assessment.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama mahasiswa, NIM, industri..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="status" class="form-control form-select">
+                            <option value="">Semua Status Penilaian</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Belum Dinilai</option>
+                            <option value="assessed" {{ request('status') === 'assessed' ? 'selected' : '' }}>Sudah Dinilai</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'status']))
+                            <a href="{{ route('dpl.assessment.index') }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-responsive-md table-hover">
                         <thead>
@@ -81,7 +108,7 @@
                                         </td>
                                         <td>
                                             @if($assess)
-                                                <span class="badge light bg-success text-[#ffffff] font-weight-bold py-2 px-3">TERINILAI</span>
+                                                <span class="badge light bg-success text-success font-weight-bold py-2 px-3">TERINILAI</span>
                                             @else
                                                 <button type="submit" class="btn btn-primary btn-sm px-3">
                                                     <i class="la la-save me-1"></i> Simpan Nilai
@@ -97,6 +124,15 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $internships->firstItem() ?? 0 }} - {{ $internships->lastItem() ?? 0 }} dari {{ $internships->total() }} mahasiswa
+                    </small>
+                    <div>
+                        {{ $internships->links() }}
+                    </div>
                 </div>
             </div>
         </div>

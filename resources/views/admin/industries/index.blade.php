@@ -28,13 +28,38 @@
                 </a>
             </div>
             <div class="card-body">
-                <!-- Search Filter -->
-                <form action="{{ route('admin.industries.index') }}" method="GET" class="row g-3 mb-4">
-                    <div class="col-md-10">
-                        <input type="text" name="search" class="form-control" placeholder="Cari nama perusahaan atau kota..." value="{{ request('search') }}">
+                <!-- Search & Filters -->
+                <form action="{{ route('admin.industries.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama perusahaan, kota, bidang..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="partnership_status" class="form-control form-select">
+                            <option value="">Semua Kerjasama</option>
+                            <option value="mou" {{ request('partnership_status') === 'mou' ? 'selected' : '' }}>MOU (Aktif)</option>
+                            <option value="moa" {{ request('partnership_status') === 'moa' ? 'selected' : '' }}>MOA</option>
+                            <option value="none" {{ request('partnership_status') === 'none' ? 'selected' : '' }}>Tanpa Kerjasama</option>
+                        </select>
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-primary btn-block">Cari</button>
+                        <select name="is_partner" class="form-control form-select">
+                            <option value="">Status Mitra</option>
+                            <option value="1" {{ request('is_partner') === '1' ? 'selected' : '' }}>Mitra Resmi</option>
+                            <option value="0" {{ request('is_partner') === '0' ? 'selected' : '' }}>Bukan Mitra</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'partnership_status', 'is_partner']))
+                            <a href="{{ route('admin.industries.index') }}" class="btn btn-light" title="Reset Filter">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
                     </div>
                 </form>
 
@@ -58,7 +83,14 @@
                                             <img src="{{ $ind->logo_url }}" width="35" height="35" class="rounded-circle me-3" style="object-fit: cover;" alt="">
                                             <div>
                                                 <h6 class="mb-0 text-dark" style="font-weight: 600;">{{ $ind->name }}</h6>
-                                                <small class="text-muted">{{ $ind->website ?? '-' }}</small>
+                                                <small class="text-muted">{{ $ind->website ?? $ind->email }}</small>
+                                                @if($ind->supervisors->isNotEmpty() && $ind->supervisors->first()->user)
+                                                    <div class="mt-1">
+                                                        <span class="badge badge-light text-muted" style="font-size: 11px;" title="Akun: {{ $ind->supervisors->first()->user->email }}">
+                                                            <i class="la la-user-shield me-1 text-primary"></i>{{ $ind->supervisors->first()->user->name }}
+                                                        </span>
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -76,6 +108,13 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2">
+                                            @if($ind->supervisors->isNotEmpty() && auth()->user()->canImpersonate() && $ind->supervisors->first()->user?->canBeImpersonated())
+                                                <!-- Login As Supervisor -->
+                                                <a href="{{ route('impersonate', $ind->supervisors->first()->user->id) }}" class="btn btn-dark btn-xs" title="Login Sebagai Supervisor ({{ $ind->supervisors->first()->user->name }})">
+                                                    <i class="la la-user-secret"></i>
+                                                </a>
+                                            @endif
+
                                             <!-- Toggle status -->
                                             <form action="{{ route('admin.industries.toggle-partner', $ind->id) }}" method="POST">
                                                 @csrf
@@ -115,8 +154,13 @@
                     </table>
                 </div>
 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $industries->links() }}
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $industries->firstItem() ?? 0 }} - {{ $industries->lastItem() ?? 0 }} dari {{ $industries->total() }} industri
+                    </small>
+                    <div>
+                        {{ $industries->links() }}
+                    </div>
                 </div>
             </div>
         </div>

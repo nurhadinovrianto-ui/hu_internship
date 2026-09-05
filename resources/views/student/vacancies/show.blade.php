@@ -62,7 +62,7 @@
                     </li>
                     <li class="d-flex justify-content-between mb-3 border-bottom border-white border-opacity-10 pb-2">
                         <span>Durasi:</span>
-                        <strong class="text-white">{{ $vacancy->duration_months }} Bulan</strong>
+                        <strong class="text-white">{{ $vacancy->duration }}</strong>
                     </li>
                     <li class="d-flex justify-content-between mb-3 border-bottom border-white border-opacity-10 pb-2">
                         <span>Sisa Kuota:</span>
@@ -84,9 +84,24 @@
                 <form action="{{ route('student.vacancies.apply', $vacancy->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
-                    <div class="form-group mb-3">
-                        <label class="form-label" for="cv_file">Curriculum Vitae (CV) <span class="text-danger">*</span></label>
-                        <input type="file" name="cv_file" id="cv_file" class="form-control" accept=".pdf" required>
+                    @php $profileCv = auth()->user()->student?->cv_file; @endphp
+
+                    @if($profileCv)
+                        <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between rounded">
+                            <div>
+                                <i class="la la-check-circle me-1"></i> <span class="fw-bold">CV Profil Tersedia</span>
+                                <a href="{{ asset('storage/' . $profileCv) }}" target="_blank" class="ms-1 text-primary text-decoration-underline fw-bold small">Lihat CV</a>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="use_profile_cv" id="use_profile_cv" value="1" checked onchange="document.getElementById('cv_upload_box').style.display = this.checked ? 'none' : 'block'; document.getElementById('cv_file').required = !this.checked;">
+                                <label class="form-check-label small font-w600" for="use_profile_cv">Pakai CV ini</label>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="form-group mb-3" id="cv_upload_box" style="{{ $profileCv ? 'display: none;' : '' }}">
+                        <label class="form-label" for="cv_file">Curriculum Vitae (CV) {{ $profileCv ? 'Khusus (Opsional jika pakai CV profil)' : '' }} <span class="text-danger">*</span></label>
+                        <input type="file" name="cv_file" id="cv_file" class="form-control" accept=".pdf" {{ $profileCv ? '' : 'required' }}>
                         <small class="text-muted">Hanya file PDF dengan ukuran maksimal 2MB.</small>
                     </div>
 

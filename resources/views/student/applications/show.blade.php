@@ -118,7 +118,7 @@
 
                 <div class="mb-4">
                     <span class="text-muted d-block" style="font-size: 12px;">Masa Magang:</span>
-                    <strong class="text-dark">{{ $application->vacancy->duration_months }} Bulan</strong>
+                    <strong class="text-dark">{{ $application->vacancy->duration }}</strong>
                 </div>
 
                 <div class="border-top pt-3">

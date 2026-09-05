@@ -23,9 +23,15 @@
         <div class="card shadow-sm border-0">
             <div class="card-body">
                 <!-- Search/Filters -->
-                <form action="{{ route('kaprodi.applications.index') }}" method="GET" class="row g-3 mb-4">
-                    <div class="col-md-9">
-                        <select name="status" class="form-control">
+                <form action="{{ route('kaprodi.applications.index') }}" method="GET" class="row g-2 mb-4 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="la la-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control border-start-0" placeholder="Cari nama mahasiswa, NIM, posisi, industri..." value="{{ request('search') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="status" class="form-control form-select">
                             <option value="">Semua Status Pengajuan</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Validasi</option>
                             <option value="kaprodi_approved" {{ request('status') === 'kaprodi_approved' ? 'selected' : '' }}>Disetujui Kaprodi</option>
@@ -33,8 +39,15 @@
                             <option value="industry_accepted" {{ request('status') === 'industry_accepted' ? 'selected' : '' }}>Diterima Industri</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary btn-block">Filter Pengajuan</button>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="la la-filter me-1"></i> Filter
+                        </button>
+                        @if(request()->anyFilled(['search', 'status']))
+                            <a href="{{ route('kaprodi.applications.index') }}" class="btn btn-light" title="Reset">
+                                <i class="la la-undo"></i>
+                            </a>
+                        @endif
                     </div>
                 </form>
 
@@ -78,8 +91,13 @@
                     </table>
                 </div>
 
-                <div class="mt-4 d-flex justify-content-center">
-                    {{ $applications->links() }}
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Menampilkan {{ $applications->firstItem() ?? 0 }} - {{ $applications->lastItem() ?? 0 }} dari {{ $applications->total() }} pengajuan
+                    </small>
+                    <div>
+                        {{ $applications->links() }}
+                    </div>
                 </div>
             </div>
         </div>

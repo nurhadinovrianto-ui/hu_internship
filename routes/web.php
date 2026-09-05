@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\StudyProgramController;
 use App\Http\Controllers\Admin\AcademicPeriodController;
 use App\Http\Controllers\Admin\IndustryController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TrackingController as AdminTrackingController;
+use App\Http\Controllers\Student\TrackingController as StudentTrackingController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboard;
 use App\Http\Controllers\Finance\PaymentController;
 use App\Http\Controllers\Baak\DashboardController as BaakDashboard;
@@ -75,6 +77,9 @@ Route::middleware('auth')->group(function () {
     // Common Profile Routes
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile');
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    
+    // Impersonate Routes
+    Route::impersonate();
 });
 
 // Pending page (Google login tapi belum punya role)
@@ -167,9 +172,18 @@ Route::middleware(['auth', 'role:super-admin'])
         Route::resource('industries', IndustryController::class);
         Route::patch('industries/{industry}/toggle-partner', [IndustryController::class, 'togglePartner'])->name('industries.toggle-partner');
 
+        // Vacancies (Lowongan)
+        Route::resource('vacancies', \App\Http\Controllers\Admin\VacancyController::class);
+        Route::patch('vacancies/{vacancy}/toggle-status', [\App\Http\Controllers\Admin\VacancyController::class, 'toggleStatus'])->name('vacancies.toggle-status');
+
         // Application Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+        // Realtime Student Tracking
+        Route::get('/tracking', [AdminTrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/live-data', [AdminTrackingController::class, 'liveData'])->name('tracking.live-data');
+        Route::get('/tracking/{student}/history', [AdminTrackingController::class, 'studentHistory'])->name('tracking.history');
     });
 
 // ======================================================
@@ -216,11 +230,41 @@ Route::middleware(['auth', 'role:kaprodi'])
         Route::patch('/applications/{application}/reject', [KaprodiApplicationController::class, 'reject'])->name('applications.reject');
         Route::get('/internships', [\App\Http\Controllers\Kaprodi\InternshipController::class, 'index'])->name('internships.index');
         Route::patch('/internships/{internship}/cancel', [\App\Http\Controllers\Kaprodi\InternshipController::class, 'cancel'])->name('internships.cancel');
+        
+        // Lowongan Magang Kaprodi
+        Route::resource('vacancies', \App\Http\Controllers\Kaprodi\VacancyController::class);
+        Route::patch('vacancies/{vacancy}/toggle-status', [\App\Http\Controllers\Kaprodi\VacancyController::class, 'toggleStatus'])->name('vacancies.toggle-status');
+        Route::get('vacancies/{vacancy}/applicants', [\App\Http\Controllers\Kaprodi\VacancyController::class, 'applicants'])->name('vacancies.applicants');
+        Route::patch('vacancies/applicants/{application}/accept', [\App\Http\Controllers\Kaprodi\VacancyController::class, 'acceptApplicant'])->name('vacancies.applicants.accept');
+
+        // Plotting DPL
         Route::get('/dpl-plotting', [DplPlottingController::class, 'index'])->name('dpl-plotting.index');
+        Route::post('/dpl-plotting/pre-placement/{student}/assign', [DplPlottingController::class, 'assignPrePlacement'])->name('dpl-plotting.pre-placement.assign');
+        Route::delete('/dpl-plotting/pre-placement/{student}/remove', [DplPlottingController::class, 'removePrePlacement'])->name('dpl-plotting.pre-placement.remove');
         Route::post('/dpl-plotting/{internship}/assign', [DplPlottingController::class, 'assign'])->name('dpl-plotting.assign');
+        Route::post('/dpl-plotting/{internship}/reassign', [DplPlottingController::class, 'reassign'])->name('dpl-plotting.reassign');
         Route::get('/reports', [KaprodiReportController::class, 'index'])->name('reports.index');
         Route::post('/reports/{report}/receive', [KaprodiReportController::class, 'receive'])->name('reports.receive');
         Route::get('/statistics', [KaprodiDashboard::class, 'statistics'])->name('statistics');
+
+        // Realtime Student Tracking
+        Route::get('/tracking', [\App\Http\Controllers\Shared\TrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/live-data', [\App\Http\Controllers\Shared\TrackingController::class, 'liveData'])->name('tracking.live-data');
+        Route::get('/tracking/{student}/history', [\App\Http\Controllers\Shared\TrackingController::class, 'studentHistory'])->name('tracking.history');
+
+        // Magang Mandiri
+        Route::get('/self-proposals', [\App\Http\Controllers\Kaprodi\SelfProposalController::class, 'index'])->name('self-proposals.index');
+        Route::get('/self-proposals/{proposal}', [\App\Http\Controllers\Kaprodi\SelfProposalController::class, 'show'])->name('self-proposals.show');
+        Route::patch('/self-proposals/{proposal}/approve', [\App\Http\Controllers\Kaprodi\SelfProposalController::class, 'approve'])->name('self-proposals.approve');
+        Route::patch('/self-proposals/{proposal}/reject', [\App\Http\Controllers\Kaprodi\SelfProposalController::class, 'reject'])->name('self-proposals.reject');
+        Route::patch('/self-proposals/{proposal}/revision', [\App\Http\Controllers\Kaprodi\SelfProposalController::class, 'revision'])->name('self-proposals.revision');
+
+        // Seminar / Sidang Ujian Magang
+        Route::get('/defenses', [\App\Http\Controllers\Kaprodi\DefenseController::class, 'index'])->name('defenses.index');
+        Route::post('/defenses/{defense}/schedule', [\App\Http\Controllers\Kaprodi\DefenseController::class, 'schedule'])->name('defenses.schedule');
+
+        // Kuesioner Evaluasi Kepuasan
+        Route::get('/surveys', [\App\Http\Controllers\Shared\SurveyController::class, 'analyticsIndex'])->name('surveys.index');
     });
 
 // ======================================================
@@ -234,6 +278,14 @@ Route::middleware(['auth', 'role:dekan'])
         Route::get('/statistics', [DekanDashboard::class, 'statistics'])->name('statistics');
         Route::get('/industries', [DekanDashboard::class, 'industries'])->name('industries');
         Route::get('/internships', [DekanDashboard::class, 'internships'])->name('internships');
+
+        // Realtime Student Tracking
+        Route::get('/tracking', [\App\Http\Controllers\Shared\TrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/live-data', [\App\Http\Controllers\Shared\TrackingController::class, 'liveData'])->name('tracking.live-data');
+        Route::get('/tracking/{student}/history', [\App\Http\Controllers\Shared\TrackingController::class, 'studentHistory'])->name('tracking.history');
+
+        // Kuesioner Evaluasi Kepuasan
+        Route::get('/surveys', [\App\Http\Controllers\Shared\SurveyController::class, 'analyticsIndex'])->name('surveys.index');
     });
 
 // ======================================================
@@ -245,6 +297,8 @@ Route::middleware(['auth', 'role:dpl'])
     ->group(function () {
         Route::get('/dashboard', [DplDashboard::class, 'index'])->name('dashboard');
         Route::get('/students', [DplDashboard::class, 'students'])->name('students');
+        Route::get('/vacancies', [\App\Http\Controllers\Dpl\VacancyController::class, 'index'])->name('vacancies.index');
+        Route::get('/vacancies/{vacancy}', [\App\Http\Controllers\Dpl\VacancyController::class, 'show'])->name('vacancies.show');
         Route::get('/logbooks', [DplLogbookController::class, 'index'])->name('logbooks.index');
         Route::get('/logbooks/{logbook}', [DplLogbookController::class, 'show'])->name('logbooks.show');
         Route::post('/logbooks/{logbook}/review', [DplLogbookController::class, 'review'])->name('logbooks.review');
@@ -255,6 +309,24 @@ Route::middleware(['auth', 'role:dpl'])
         Route::get('/reports', [DplReportController::class, 'index'])->name('reports.index');
         Route::post('/reports/{report}/approve', [DplReportController::class, 'approve'])->name('reports.approve');
         Route::resource('meetings', \App\Http\Controllers\Dpl\MeetingController::class)->except(['show']);
+
+        // Seminar / Sidang Ujian Magang
+        Route::get('/defenses', [\App\Http\Controllers\Dpl\DefenseController::class, 'index'])->name('defenses.index');
+        Route::get('/defenses/{defense}/assess', [\App\Http\Controllers\Dpl\DefenseController::class, 'assess'])->name('defenses.assess');
+        Route::post('/defenses/{defense}/assess', [\App\Http\Controllers\Dpl\DefenseController::class, 'storeAssessment'])->name('defenses.storeAssessment');
+        Route::get('/defenses/{defense}/berita-acara', [\App\Http\Controllers\Dpl\DefenseController::class, 'beritaAcara'])->name('defenses.beritaAcara');
+
+        // Realtime Student Tracking
+        Route::get('/tracking', [\App\Http\Controllers\Shared\TrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/live-data', [\App\Http\Controllers\Shared\TrackingController::class, 'liveData'])->name('tracking.live-data');
+        Route::get('/tracking/{student}/history', [\App\Http\Controllers\Shared\TrackingController::class, 'studentHistory'])->name('tracking.history');
+
+        // Review Usulan Magang Mandiri
+        Route::get('/self-proposals', [\App\Http\Controllers\Dpl\SelfProposalController::class, 'index'])->name('self-proposals.index');
+        Route::get('/self-proposals/{proposal}', [\App\Http\Controllers\Dpl\SelfProposalController::class, 'show'])->name('self-proposals.show');
+        Route::patch('/self-proposals/{proposal}/approve', [\App\Http\Controllers\Dpl\SelfProposalController::class, 'approve'])->name('self-proposals.approve');
+        Route::patch('/self-proposals/{proposal}/revision', [\App\Http\Controllers\Dpl\SelfProposalController::class, 'revision'])->name('self-proposals.revision');
+        Route::patch('/self-proposals/{proposal}/reject', [\App\Http\Controllers\Dpl\SelfProposalController::class, 'reject'])->name('self-proposals.reject');
     });
 
 // ======================================================
@@ -297,6 +369,15 @@ Route::middleware(['auth', 'role:supervisor-industri'])
         Route::get('/agreements/{internship}/template', [\App\Http\Controllers\Industry\AgreementController::class, 'template'])->name('agreements.template');
         Route::post('/agreements/{internship}', [\App\Http\Controllers\Industry\AgreementController::class, 'store'])->name('agreements.store');
         Route::resource('agreements', \App\Http\Controllers\Industry\AgreementController::class)->only(['index', 'destroy']);
+
+        // Realtime Student Tracking
+        Route::get('/tracking', [\App\Http\Controllers\Shared\TrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/live-data', [\App\Http\Controllers\Shared\TrackingController::class, 'liveData'])->name('tracking.live-data');
+        Route::get('/tracking/{student}/history', [\App\Http\Controllers\Shared\TrackingController::class, 'studentHistory'])->name('tracking.history');
+
+        // Kuesioner Evaluasi Kepuasan
+        Route::get('/internships/{internship}/survey', [\App\Http\Controllers\Shared\SurveyController::class, 'industrySurveyForm'])->name('surveys.form');
+        Route::post('/internships/{internship}/survey', [\App\Http\Controllers\Shared\SurveyController::class, 'storeIndustrySurvey'])->name('surveys.store');
     });
 
 Route::middleware(['auth', 'role:supervisor-industri'])
@@ -316,7 +397,6 @@ Route::middleware(['auth', 'role:mahasiswa'])
     ->group(function () {
         Route::get('/dashboard', [StudentDashboard::class, 'index'])->name('dashboard');
 
-
         // Lowongan & Apply
         Route::get('/vacancies', [StudentApplicationController::class, 'browse'])->name('vacancies.browse');
         Route::get('/vacancies/{vacancy}', [StudentApplicationController::class, 'showVacancy'])->name('vacancies.show');
@@ -325,11 +405,20 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/applications/{application}', [StudentApplicationController::class, 'showApplication'])->name('applications.show');
         Route::get('/applications/{application}/letter', [\App\Http\Controllers\Student\LetterController::class, 'downloadPengantar'])->name('applications.letter');
 
+        // Pengajuan Magang Mandiri
+        Route::get('/self-proposals', [\App\Http\Controllers\Student\SelfProposalController::class, 'index'])->name('self-proposals.index');
+        Route::get('/self-proposals/create', [\App\Http\Controllers\Student\SelfProposalController::class, 'create'])->name('self-proposals.create');
+        Route::post('/self-proposals', [\App\Http\Controllers\Student\SelfProposalController::class, 'store'])->name('self-proposals.store');
+        Route::get('/self-proposals/{proposal}', [\App\Http\Controllers\Student\SelfProposalController::class, 'show'])->name('self-proposals.show');
+        Route::get('/self-proposals/{proposal}/edit', [\App\Http\Controllers\Student\SelfProposalController::class, 'edit'])->name('self-proposals.edit');
+        Route::put('/self-proposals/{proposal}', [\App\Http\Controllers\Student\SelfProposalController::class, 'update'])->name('self-proposals.update');
+
         // Absensi
         Route::get('/attendance/export', [AttendanceController::class, 'export'])->name('attendance.export');
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::post('/attendance/checkin', [AttendanceController::class, 'checkIn'])->name('attendance.checkin');
         Route::patch('/attendance/{attendance}/checkout', [AttendanceController::class, 'checkOut'])->name('attendance.checkout');
+        Route::post('/attendance/backdate', [AttendanceController::class, 'storeBackdate'])->name('attendance.storeBackdate');
 
         // Logbook
         Route::get('/logbooks/export', [StudentLogbookController::class, 'export'])->name('logbooks.export');
@@ -339,6 +428,10 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/report', [ReportController::class, 'index'])->name('report.index');
         Route::post('/report', [ReportController::class, 'upload'])->name('report.upload');
 
+        // Seminar / Sidang Ujian Magang
+        Route::get('/defense', [\App\Http\Controllers\Student\DefenseController::class, 'index'])->name('defense.index');
+        Route::post('/defense/register', [\App\Http\Controllers\Student\DefenseController::class, 'register'])->name('defense.register');
+
         // Internship Agreement
         Route::get('/agreement', [StudentAgreementController::class, 'index'])->name('agreement.index');
 
@@ -346,6 +439,13 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/certificate', [CertificateController::class, 'index'])->name('certificate.index');
         Route::get('/certificate/download', [\App\Http\Controllers\Student\CertificateController::class, 'download'])->name('certificate.download');
         Route::get('/meetings', [\App\Http\Controllers\Student\MeetingController::class, 'index'])->name('meetings.index');
+
+        // Kuesioner Evaluasi Mahasiswa
+        Route::get('/internships/{internship}/survey', [\App\Http\Controllers\Shared\SurveyController::class, 'studentSurveyForm'])->name('surveys.form');
+        Route::post('/internships/{internship}/survey', [\App\Http\Controllers\Shared\SurveyController::class, 'storeStudentSurvey'])->name('surveys.store');
+
+        // Realtime Tracking Ping
+        Route::post('/tracking/ping', [StudentTrackingController::class, 'ping'])->name('tracking.ping');
     });
 
 // SHARED ROUTES

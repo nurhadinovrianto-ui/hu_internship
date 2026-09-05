@@ -1,0 +1,3 @@
+cd /var/www/kms-fict.horizon.ac.id/wordpress/internship
+put update.zip
+quit
